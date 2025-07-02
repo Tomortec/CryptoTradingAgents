@@ -1,7 +1,8 @@
 from langchain_core.messages import AIMessage
 import time
 import json
-
+from tradingagents.default_config import DEFAULT_CONFIG
+from tradingagents.i18n import get_prompts
 
 def create_bull_researcher(llm, memory):
     def bull_node(state) -> dict:
@@ -14,6 +15,7 @@ def create_bull_researcher(llm, memory):
         sentiment_report = state["sentiment_report"]
         news_report = state["news_report"]
         fundamentals_report = state["fundamentals_report"]
+        investment_preferences = state.get("investment_preferences", "")
 
         curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
         past_memories = memory.get_memories(curr_situation, n_matches=2)
@@ -22,26 +24,19 @@ def create_bull_researcher(llm, memory):
         for i, rec in enumerate(past_memories, 1):
             past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
-
-Key points to focus on:
-- Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.
-- Competitive Advantages: Emphasize factors like unique products, strong branding, or dominant market positioning.
-- Positive Indicators: Use financial health, industry trends, and recent positive news as evidence.
-- Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, addressing concerns thoroughly and showing why the bull perspective holds stronger merit.
-- Engagement: Present your argument in a conversational style, engaging directly with the bear analyst's points and debating effectively rather than just listing data.
-
-Resources available:
-Market research report: {market_research_report}
-Social media sentiment report: {sentiment_report}
-Latest world affairs news: {news_report}
-Company fundamentals report: {fundamentals_report}
-Conversation history of the debate: {history}
-Last bear argument: {current_response}
-Reflections from similar situations and lessons learned: {past_memory_str}
-Use this information to deliver a compelling bull argument, refute the bear's concerns, and engage in a dynamic debate that demonstrates the strengths of the bull position. You must also address reflections and learn from lessons and mistakes you made in the past.
-"""
-
+        prompt = get_prompts("researchers", "bull_researcher") \
+            .replace("{max_tokens}", str(DEFAULT_CONFIG["max_tokens"])) \
+            .replace("{market_research_report}", market_research_report) \
+            .replace("{sentiment_report}", sentiment_report) \
+            .replace("{news_report}", news_report) \
+            .replace("{fundamentals_report}", fundamentals_report) \
+            .replace("{history}", history) \
+            .replace("{current_response}", current_response) \
+            .replace("{past_memory_str}", past_memory_str) \
+            + "\n\n" \
+            + get_prompts("investment_preferences", "system_message") \
+            .replace("{investment_preferences}", investment_preferences)
+        
         response = llm.invoke(prompt)
 
         argument = f"Bull Analyst: {response.content}"

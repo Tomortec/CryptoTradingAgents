@@ -50,296 +50,181 @@ class Toolkit:
 
     @staticmethod
     @tool
-    def get_reddit_news(
-        curr_date: Annotated[str, "Date you want to get news for in yyyy-mm-dd format"],
+    def get_blockbeats_news(
+        count: Annotated[int, "Number of news articles to retrieve, no more than 30"] = 10,
     ) -> str:
         """
-        Retrieve global news from Reddit within a specified time frame.
+        Retrieve the latest news from BlockBeats, especially useful for Cryptos.
         Args:
-            curr_date (str): Date you want to get news for in yyyy-mm-dd format
+            count (int): Number of news articles to retrieve, no more than 30
         Returns:
-            str: A formatted dataframe containing the latest global news from Reddit in the specified time frame.
+            str: A formatted string containing the latest news from BlockBeats.
         """
-        
-        global_news_result = interface.get_reddit_global_news(curr_date, 7, 5)
-
-        return global_news_result
-
+        blockbeats_news_result = interface.get_blockbeats_news(count)
+        return blockbeats_news_result
+    
     @staticmethod
     @tool
-    def get_finnhub_news(
-        ticker: Annotated[
-            str,
-            "Search query of a company, e.g. 'AAPL, TSM, etc.",
-        ],
-        start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-        end_date: Annotated[str, "End date in yyyy-mm-dd format"],
-    ):
-        """
-        Retrieve the latest news about a given stock from Finnhub within a date range
-        Args:
-            ticker (str): Ticker of a company. e.g. AAPL, TSM
-            start_date (str): Start date in yyyy-mm-dd format
-            end_date (str): End date in yyyy-mm-dd format
-        Returns:
-            str: A formatted dataframe containing news about the company within the date range from start_date to end_date
-        """
-
-        end_date_str = end_date
-
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        look_back_days = (end_date - start_date).days
-
-        finnhub_news_result = interface.get_finnhub_news(
-            ticker, end_date_str, look_back_days
-        )
-
-        return finnhub_news_result
-
-    @staticmethod
-    @tool
-    def get_reddit_stock_info(
-        ticker: Annotated[
-            str,
-            "Ticker of a company. e.g. AAPL, TSM",
-        ],
-        curr_date: Annotated[str, "Current date you want to get news for"],
+    def get_coindesk_news(
+        tickers: Annotated[
+            List[str],
+            "List of tickers to get news for, e.g. ['BTC', 'ETH']",
+        ] = [],
+        count: Annotated[int, "Number of news articles to retrieve, default is 10"] = 10,
     ) -> str:
         """
-        Retrieve the latest news about a given stock from Reddit, given the current date.
+        Retrieve the latest news from Coindesk for a given list of tickers.
         Args:
-            ticker (str): Ticker of a company. e.g. AAPL, TSM
-            curr_date (str): current date in yyyy-mm-dd format to get news for
+            tickers (List[str]): List of tickers to get news for, e.g. ['BTC', 'ETH']
+            count (int): Number of news articles to retrieve, default is 10
         Returns:
-            str: A formatted dataframe containing the latest news about the company on the given date
+            str: A formatted string containing the latest news from Coindesk for the specified tickers.
         """
-
-        stock_news_results = interface.get_reddit_company_news(ticker, curr_date, 7, 5)
-
-        return stock_news_results
-
+        coindesk_news_result = interface.get_coindesk_news(tickers, count)
+        return coindesk_news_result
+    
     @staticmethod
     @tool
-    def get_YFin_data(
-        symbol: Annotated[str, "ticker symbol of the company"],
-        start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-        end_date: Annotated[str, "Start date in yyyy-mm-dd format"],
+    def get_coinstats_news() -> str:
+        """
+        Retrieve the latest news from CoinStats.
+        Returns:
+            str: A formatted string containing the latest news from CoinStats.
+        """
+        coinstats_news_result = interface.get_coinstats_news()
+        return coinstats_news_result
+    
+    @staticmethod
+    @tool
+    def get_binance_ohlcv(
+        symbol: Annotated[str, "ticker symbol of the asset"],
+        interval: Annotated[
+            str,
+            "Interval for the data, e.g. '1m', '5m', '1h', '1d'",
+        ] = "15m",
     ) -> str:
         """
-        Retrieve the stock price data for a given ticker symbol from Yahoo Finance.
+        Retrieve the latest OHLCV data from Binance for a given symbol and interval.
         Args:
-            symbol (str): Ticker symbol of the company, e.g. AAPL, TSM
-            start_date (str): Start date in yyyy-mm-dd format
-            end_date (str): End date in yyyy-mm-dd format
+            symbol (str): Ticker symbol of the asset, e.g. 'BTCUSDT'
+            interval (str): Interval for the data, e.g. '1m', '5m', '1h', '1d'
         Returns:
-            str: A formatted dataframe containing the stock price data for the specified ticker symbol in the specified date range.
+            str: A formatted string containing the latest OHLCV data from Binance for the specified symbol and interval.
         """
-
-        result_data = interface.get_YFin_data(symbol, start_date, end_date)
-
-        return result_data
-
+        binance_ohlcv_result = interface.get_binance_ohlcv(symbol, interval)
+        return binance_ohlcv_result
+    
     @staticmethod
     @tool
-    def get_YFin_data_online(
-        symbol: Annotated[str, "ticker symbol of the company"],
-        start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-        end_date: Annotated[str, "Start date in yyyy-mm-dd format"],
+    def get_coinstats_btc_dominance() -> str:
+        """
+        Retrieve the current Bitcoin dominance percentage from CoinStats.
+        Returns:
+            str: A formatted string containing the last daily and weekly Bitcoin dominance percentage.
+        """
+        btc_dominance_result = interface.get_coinstats_btc_dominance()
+        return btc_dominance_result
+    
+    @staticmethod
+    @tool
+    def get_binance_data(
+        symbol: Annotated[str, "ticker symbol of the asset"],
+        interval: Annotated[
+            str,
+            "Interval for the data, e.g. '1m', '5m', '1h', '1d'",
+        ] = "15m",
     ) -> str:
         """
-        Retrieve the stock price data for a given ticker symbol from Yahoo Finance.
+        Retrieve the latest market data from Binance for a given symbol and interval.
         Args:
-            symbol (str): Ticker symbol of the company, e.g. AAPL, TSM
-            start_date (str): Start date in yyyy-mm-dd format
-            end_date (str): End date in yyyy-mm-dd format
+            symbol (str): Ticker symbol of the asset, e.g. 'BTCUSDT'
+            interval (str): Interval for the data, e.g. '1m', '5m', '1h', '1d'
         Returns:
-            str: A formatted dataframe containing the stock price data for the specified ticker symbol in the specified date range.
+            str: A formatted string containing the latest market data from Binance for the specified symbol and interval.
         """
-
-        result_data = interface.get_YFin_data_online(symbol, start_date, end_date)
-
-        return result_data
-
+        binance_data_result = interface.get_binance_data(symbol, interval)
+        return binance_data_result
+    
     @staticmethod
     @tool
-    def get_stockstats_indicators_report(
-        symbol: Annotated[str, "ticker symbol of the company"],
-        indicator: Annotated[
-            str, "technical indicator to get the analysis and report of"
-        ],
-        curr_date: Annotated[
-            str, "The current trading date you are trading on, YYYY-mm-dd"
-        ],
-        look_back_days: Annotated[int, "how many days to look back"] = 30,
+    def get_fear_and_greed_index() -> str:
+        """
+        Get current crypto market Fear and Greed Index. 0 means "Extreme Fear", while 100 means "Extreme Greed"
+        Returns:
+            str: A formatted string containing the current crypto market Fear and Greed Index.
+        """
+        return interface.get_fear_and_greed_index()
+    
+    @staticmethod
+    @tool
+    def get_taapi_bulk_indicators(
+        symbol: Annotated[str, "Ticker symbol of the asset, e.g. 'BTC'"],
+        interval: Annotated[
+            str,
+            "Interval for the data, e.g. '1m', '5m', '1h', '1d'",
+        ] = "15m",
+        ema_period: Annotated[int, "EMA period, default is 30"] = 30,
+        ichimoku_conversionPeriod: Annotated[int, "Ichimoku conversion line period, default is 9"] = 9,
+        ichimoku_basePeriod: Annotated[int, "Ichimoku base line period, default is 26"] = 26,
+        ichimoku_spanPeriod: Annotated[int, "Ichimoku span period, default is 52"] = 52,
+        ichimoku_displacement: Annotated[int, "Ichimoku displacement, default is 26"] = 26,
+        supertrend_period: Annotated[int, "Supertrend period, default is 7"] = 7,
+        supertrend_multiplier: Annotated[float, "Supertrend multiplier, default is 3.0"] = 3.0,
+        psar_start: Annotated[float, "Parabolic SAR start, default is 0.02"] = 0.02,
+        psar_increment: Annotated[float, "Parabolic SAR increment, default is 0.02"] = 0.02,
+        psar_maximum: Annotated[float, "Parabolic SAR maximum, default is 0.2"] = 0.2,
+        donchianchannels_period: Annotated[int, "Donchian Channels period, default is 20"] = 20,
+        macd_optInFastPeriod: Annotated[int, "MACD fast period, default is 12"] = 12,
+        macd_optInSlowPeriod: Annotated[int, "MACD slow period, default is 26"] = 26,
+        macd_optInSignalPeriod: Annotated[int, "MACD signal period, default is 9"] = 9,
+        rsi_period: Annotated[int, "RSI period, default is 14"] = 14,
+        stochrsi_rsiPeriod: Annotated[int, "Stochastic RSI RSI period, default is 14"] = 14,
+        stochrsi_kPeriod: Annotated[int, "Stochastic RSI %K period, default is 5"] = 5,
+        stochrsi_dPeriod: Annotated[int, "Stochastic RSI %D period, default is 3"] = 3,
+        stochrsi_stochasticPeriod: Annotated[int, "Stochastic RSI stochastic period, default is 14"] = 14,
+        trix_period: Annotated[int, "TRIX period, default is 30"] = 30,
+        stc_fastLength: Annotated[int, "STC fast length, default is 23"] = 23,
+        stc_slowLength: Annotated[int, "STC slow length, default is 50"] = 50,
+        stc_cycleLength: Annotated[int, "STC cycle length, default is 10"] = 10,
+        atr_period: Annotated[int, "ATR period, default is 14"] = 14,
+        bbands_period: Annotated[int, "Bollinger Bands period, default is 20"] = 20,
+        bbands_stddev: Annotated[float, "Bollinger Bands standard deviation, default is 2.0"] = 2.0,
+        keltnerchannels_period: Annotated[int, "Keltner Channels period, default is 20"] = 20,
+        keltnerchannels_multiplier: Annotated[float, "Keltner Channels multiplier, default is 2"] = 2,
+        keltnerchannels_atrLength: Annotated[int, "Keltner Channels ATR length, default is 10"] = 10,
+        chop_period: Annotated[int, "Chop period, default is 14"] = 14,
     ) -> str:
         """
-        Retrieve stock stats indicators for a given ticker symbol and indicator.
+        Retrieve bulk technical indicators from TAAPI.io for a given symbol and interval.
         Args:
-            symbol (str): Ticker symbol of the company, e.g. AAPL, TSM
-            indicator (str): Technical indicator to get the analysis and report of
-            curr_date (str): The current trading date you are trading on, YYYY-mm-dd
-            look_back_days (int): How many days to look back, default is 30
+            symbol (str): Ticker symbol of the asset, e.g. 'BTC'
+            interval (str): Interval for the data, e.g. '1m', '5m', '1h', '1d'
         Returns:
-            str: A formatted dataframe containing the stock stats indicators for the specified ticker symbol and indicator.
+            str: A formatted string containing the bulk technical indicators from TAAPI.io for the specified symbol and interval.
         """
-
-        result_stockstats = interface.get_stock_stats_indicators_window(
-            symbol, indicator, curr_date, look_back_days, False
-        )
-
-        return result_stockstats
+        taapi_bulk_indicators_result = interface.get_taapi_bulk_indicators("BTC", "15m")
+        return taapi_bulk_indicators_result
 
     @staticmethod
     @tool
-    def get_stockstats_indicators_report_online(
-        symbol: Annotated[str, "ticker symbol of the company"],
-        indicator: Annotated[
-            str, "technical indicator to get the analysis and report of"
-        ],
-        curr_date: Annotated[
-            str, "The current trading date you are trading on, YYYY-mm-dd"
-        ],
-        look_back_days: Annotated[int, "how many days to look back"] = 30,
+    def get_reddit_posts(
+        symbol: Annotated[str, "Ticker symbol of the asset, e.g. 'BTC'"],
+        subreddit: Annotated[str, "Subreddit to search in, e.g. 'CryptoCurrency', 'CryptoMarkets', 'all'"] = "CryptoCurrency",
+        sort: Annotated[str, "Sorting method for posts ('hot', 'new', 'top', etc.)"] = "hot",
+        limit: Annotated[int, "Maximum number of posts to fetch"] = 25,
     ) -> str:
         """
-        Retrieve stock stats indicators for a given ticker symbol and indicator.
+        Fetch top posts from a specified subreddit related to a given ticker symbol.
         Args:
-            symbol (str): Ticker symbol of the company, e.g. AAPL, TSM
-            indicator (str): Technical indicator to get the analysis and report of
-            curr_date (str): The current trading date you are trading on, YYYY-mm-dd
-            look_back_days (int): How many days to look back, default is 30
+            symbol (str): Ticker symbol of the asset, e.g. 'BTC'
+            subreddit (str): Subreddit to search in, e.g. 'CryptoCurrency', 'CryptoMarkets', 'all'
+            sort (str): Sorting method for posts ('hot', 'new', 'top', etc.)
+            limit (int): Maximum number of posts to fetch
         Returns:
-            str: A formatted dataframe containing the stock stats indicators for the specified ticker symbol and indicator.
+            str: A formatted string containing the top posts from the specified subreddit related to the ticker symbol.
         """
-
-        result_stockstats = interface.get_stock_stats_indicators_window(
-            symbol, indicator, curr_date, look_back_days, True
-        )
-
-        return result_stockstats
-
-    @staticmethod
-    @tool
-    def get_finnhub_company_insider_sentiment(
-        ticker: Annotated[str, "ticker symbol for the company"],
-        curr_date: Annotated[
-            str,
-            "current date of you are trading at, yyyy-mm-dd",
-        ],
-    ):
-        """
-        Retrieve insider sentiment information about a company (retrieved from public SEC information) for the past 30 days
-        Args:
-            ticker (str): ticker symbol of the company
-            curr_date (str): current date you are trading at, yyyy-mm-dd
-        Returns:
-            str: a report of the sentiment in the past 30 days starting at curr_date
-        """
-
-        data_sentiment = interface.get_finnhub_company_insider_sentiment(
-            ticker, curr_date, 30
-        )
-
-        return data_sentiment
-
-    @staticmethod
-    @tool
-    def get_finnhub_company_insider_transactions(
-        ticker: Annotated[str, "ticker symbol"],
-        curr_date: Annotated[
-            str,
-            "current date you are trading at, yyyy-mm-dd",
-        ],
-    ):
-        """
-        Retrieve insider transaction information about a company (retrieved from public SEC information) for the past 30 days
-        Args:
-            ticker (str): ticker symbol of the company
-            curr_date (str): current date you are trading at, yyyy-mm-dd
-        Returns:
-            str: a report of the company's insider transactions/trading information in the past 30 days
-        """
-
-        data_trans = interface.get_finnhub_company_insider_transactions(
-            ticker, curr_date, 30
-        )
-
-        return data_trans
-
-    @staticmethod
-    @tool
-    def get_simfin_balance_sheet(
-        ticker: Annotated[str, "ticker symbol"],
-        freq: Annotated[
-            str,
-            "reporting frequency of the company's financial history: annual/quarterly",
-        ],
-        curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
-    ):
-        """
-        Retrieve the most recent balance sheet of a company
-        Args:
-            ticker (str): ticker symbol of the company
-            freq (str): reporting frequency of the company's financial history: annual / quarterly
-            curr_date (str): current date you are trading at, yyyy-mm-dd
-        Returns:
-            str: a report of the company's most recent balance sheet
-        """
-
-        data_balance_sheet = interface.get_simfin_balance_sheet(ticker, freq, curr_date)
-
-        return data_balance_sheet
-
-    @staticmethod
-    @tool
-    def get_simfin_cashflow(
-        ticker: Annotated[str, "ticker symbol"],
-        freq: Annotated[
-            str,
-            "reporting frequency of the company's financial history: annual/quarterly",
-        ],
-        curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
-    ):
-        """
-        Retrieve the most recent cash flow statement of a company
-        Args:
-            ticker (str): ticker symbol of the company
-            freq (str): reporting frequency of the company's financial history: annual / quarterly
-            curr_date (str): current date you are trading at, yyyy-mm-dd
-        Returns:
-                str: a report of the company's most recent cash flow statement
-        """
-
-        data_cashflow = interface.get_simfin_cashflow(ticker, freq, curr_date)
-
-        return data_cashflow
-
-    @staticmethod
-    @tool
-    def get_simfin_income_stmt(
-        ticker: Annotated[str, "ticker symbol"],
-        freq: Annotated[
-            str,
-            "reporting frequency of the company's financial history: annual/quarterly",
-        ],
-        curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
-    ):
-        """
-        Retrieve the most recent income statement of a company
-        Args:
-            ticker (str): ticker symbol of the company
-            freq (str): reporting frequency of the company's financial history: annual / quarterly
-            curr_date (str): current date you are trading at, yyyy-mm-dd
-        Returns:
-                str: a report of the company's most recent income statement
-        """
-
-        data_income_stmt = interface.get_simfin_income_statements(
-            ticker, freq, curr_date
-        )
-
-        return data_income_stmt
+        reddit_posts_result = interface.get_reddit_posts(symbol, subreddit, sort, limit)
+        return reddit_posts_result
 
     @staticmethod
     @tool
@@ -364,16 +249,16 @@ class Toolkit:
     @staticmethod
     @tool
     def get_stock_news_openai(
-        ticker: Annotated[str, "the company's ticker"],
+        ticker: Annotated[str, "the asset's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
         """
         Retrieve the latest news about a given stock by using OpenAI's news API.
         Args:
-            ticker (str): Ticker of a company. e.g. AAPL, TSM
+            ticker (str): Ticker of a asset. e.g. AAPL, TSM
             curr_date (str): Current date in yyyy-mm-dd format
         Returns:
-            str: A formatted string containing the latest news about the company on the given date.
+            str: A formatted string containing the latest news about the asset on the given date.
         """
 
         openai_news_results = interface.get_stock_news_openai(ticker, curr_date)
@@ -400,16 +285,16 @@ class Toolkit:
     @staticmethod
     @tool
     def get_fundamentals_openai(
-        ticker: Annotated[str, "the company's ticker"],
+        ticker: Annotated[str, "the asset's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
         """
         Retrieve the latest fundamental information about a given stock on a given date by using OpenAI's news API.
         Args:
-            ticker (str): Ticker of a company. e.g. AAPL, TSM
+            ticker (str): Ticker of a asset. e.g. AAPL, TSM
             curr_date (str): Current date in yyyy-mm-dd format
         Returns:
-            str: A formatted string containing the latest fundamental information about the company on the given date.
+            str: A formatted string containing the latest fundamental information about the asset on the given date.
         """
 
         openai_fundamentals_results = interface.get_fundamentals_openai(

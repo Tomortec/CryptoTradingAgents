@@ -9,3 +9,6 @@ eval_data/
 
 .env
 .env.local
+
+*/reports/*
+tests/

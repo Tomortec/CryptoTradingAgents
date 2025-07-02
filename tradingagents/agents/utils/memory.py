@@ -9,7 +9,7 @@ class FinancialSituationMemory:
         if config["backend_url"] == "http://localhost:11434/v1":
             self.embedding = "nomic-embed-text"
         elif config["llm_provider"] == "qwen":
-            self.embedding = "text-embedding-v2"
+            self.embedding = "text-embedding-v4"
             self.client = OpenAI(
                 base_url=config["backend_url"],
                 api_key=os.getenv("DASHSCOPE_API_KEY")

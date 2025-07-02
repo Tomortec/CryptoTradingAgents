@@ -48,12 +48,14 @@ class RiskDebateState(TypedDict):
 
 
 class AgentState(MessagesState):
-    company_of_interest: Annotated[str, "Company that we are interested in trading"]
+    asset_of_interest: Annotated[str, "Asset that we are interested in trading"]
     trade_date: Annotated[str, "What date we are trading at"]
+    investment_preferences: Annotated[str, "User's investment preferences"]
 
     sender: Annotated[str, "Agent that sent this message"]
 
     # research step
+    external_reports: Annotated[list[str], "Reports from the External Expert Researcher"]
     market_report: Annotated[str, "Report from the Market Analyst"]
     sentiment_report: Annotated[str, "Report from the Social Media Analyst"]
     news_report: Annotated[

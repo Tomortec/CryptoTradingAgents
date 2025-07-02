@@ -1,7 +1,7 @@
 # TradingAgents/graph/signal_processing.py
 
 from langchain_openai import ChatOpenAI
-
+from tradingagents.i18n import get_prompts
 
 class SignalProcessor:
     """Processes trading signals to extract actionable decisions."""
@@ -23,7 +23,7 @@ class SignalProcessor:
         messages = [
             (
                 "system",
-                "You are an efficient assistant designed to analyze paragraphs or financial reports provided by a group of analysts. Your task is to extract the investment decision: SELL, BUY, or HOLD. Provide only the extracted decision (SELL, BUY, or HOLD) as your output, without adding any additional text or information.",
+                get_prompts("signal_processor", "system_message"),
             ),
             ("human", full_signal),
         ]

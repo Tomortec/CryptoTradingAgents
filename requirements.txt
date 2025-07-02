@@ -25,3 +25,5 @@ rich
 questionary
 langchain_anthropic
 langchain-google-genai
+binance-futures-connector
+praw

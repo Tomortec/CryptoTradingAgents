@@ -1,9 +1,12 @@
 from typing import Annotated, Dict
-from .reddit_utils import fetch_top_from_category
-from .yfin_utils import *
-from .stockstats_utils import *
+from .blockbeats_utils import fetch_news_from_blockbeats
+from .coindesk_utils import fetch_news_from_coindesk
+from .coinstats_utils import *
+from .reddit_utils import fetch_posts_from_reddit
 from .googlenews_utils import *
-from .finnhub_utils import get_data_in_range
+from .binance_utils import *
+from .alternativeme_utils import fetch_fear_and_greed_from_alternativeme
+from .taapi_utils import *
 from dateutil.relativedelta import relativedelta
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -11,28 +14,441 @@ import json
 import os
 import pandas as pd
 from tqdm import tqdm
-import yfinance as yf
 from openai import OpenAI
 from .config import get_config, set_config, DATA_DIR
 
+from warnings import deprecated
+from .yfin_utils import *
+from .stockstats_utils import *
+from .finnhub_utils import get_data_in_range
+import yfinance as yf
 
+def get_blockbeats_news(count: Annotated[int, "news' count, no more than 30"] = 10):
+    """
+    Retrieve the latest top Blockbeats news
+    Args:
+        count (int): number of news to retrieve, no more than 30
+    Returns:
+        str: A formatted string containing the latest news articles and meta information
+    """
+    if count > 30:
+        raise ValueError("Count should not be more than 30")
+
+    news = fetch_news_from_blockbeats(count)
+
+    if len(news) == 0:
+        return ""
+
+    news_str = ""
+    for entry in news:
+        news_str += f"### {entry['title']} ({entry['create_time']})\n\n{entry['content']}\n\n"
+
+    return f"## Blockbeats News:\n\n{news_str}"
+
+def get_coindesk_news(
+    tickers: Annotated[list[str], "List of ticker symbols to fetch news for"] = [],
+    count: Annotated[int, "Number of news articles to fetch, default is 10"] = 10,
+) -> str:
+    """
+    Retrieve the latest top Coindesk news for given tickers.
+    
+    Args:
+        tickers (list): List of ticker symbols to fetch news for.
+        count (int): Number of news articles to fetch, default is 10.
+        
+    Returns:
+        str: A formatted string containing the latest news articles and meta information.
+    """
+    news = fetch_news_from_coindesk(tickers, count)
+
+    if len(news) == 0:
+        return ""
+
+    news_str = ""
+    for entry in news:
+        news_str += f"### {entry['title']} ({', '.join(entry['categories'])})\n\n{entry['body']}\n\n"
+
+    return f"## Coindesk News:\n\n{news_str}"
+
+def get_fear_and_greed_index() -> str:
+    fng = fetch_fear_and_greed_from_alternativeme()
+    return f"""## Fear and Greed Index: {fng[0]}\n0 means \"Extreme Fear\", while 100 means \"Extreme Greed\"\nPrevious daily FnG: {','.join(fng[1:])}"""
+
+def get_coinstats_btc_dominance() -> str:
+    """
+    Fetch the current Bitcoin dominance percentage from CoinStats API.
+
+    Returns:
+        str: A formatted string containing Bitcoin dominance for 24 hours and 1 week.
+    """
+    btc_dominance = fetch_btc_dominance_from_coinstats()
+    return f"## Bitcoin Dominance:\n24h: {btc_dominance['24h']}%, 1week: {btc_dominance['1w']}%"
+
+def get_taapi_single_indicator(
+    symbol: Annotated[str, "ticker symbol of the asset"],
+    indicator: Annotated[
+        str,
+        "Technical analysis indicator to fetch, e.g., 'sma', 'ema', 'rsi', 'macd', etc.",
+    ],
+    interval: Annotated[str, "time interval for the data, e.g., '1m', '5m', '1h'"] = "15m",
+) -> str:
+    """
+    Fetch technical analysis indicators for a given symbol and interval.
+
+    Args:
+        symbol (str): The trading pair symbol (e.g., 'BTCUSDT').
+        indicator (str): The technical analysis indicator to fetch (e.g., 'sma', 'ema', 'rsi', 'macd').
+        interval (str): The time interval for the data (e.g., '1m', '5m', '1h').
+
+    Returns:
+        str: A formatted string containing the latest technical analysis indicators.
+    """
+    ta_data = fetch_ta_from_taapi(symbol, indicator, interval)
+    return f"## {symbol} Technical Analysis ({indicator}) at {interval}: {ta_data}\n"
+
+def get_taapi_bulk_indicators(
+    symbol: Annotated[str, "ticker symbol of the asset"],
+    interval: Annotated[str, "time interval for the data, e.g., '1m', '5m', '1h'"] = "15m",
+    **kwargs: dict
+) -> str:
+    """
+    Fetch bulk technical analysis indicators for a given symbol and interval.
+
+    Args:
+        symbol (str): The trading pair symbol (e.g., 'BTC/USDT').
+        interval (str): The time interval for the data (e.g., '1m', '5m', '1h').
+        **kwargs: Additional parameters for the indicators.
+    Returns:
+        str: A formatted string containing the latest technical analysis indicators.
+    """
+    bulk = TAAPIBulkUtils(symbol, bulk_interval=interval, **kwargs)
+    trend_momentum = bulk.fetch_trend_momentum_indicators_from_taapi()
+    volatility_structure = bulk.fetch_volatility_structure_indicators_from_taapi()
+    return f"## {symbol} Trend and Momentum Indicators at {interval}:\n{trend_momentum}\n\n" + \
+            f"## {symbol} Volatility and Pattern Indicators at {interval}:\n{volatility_structure}\n"
+
+def get_coinstats_news() -> str:
+    """
+    Fetch the latest news from CoinStats API.
+
+    Returns:
+        str: A formatted string containing the latest news articles and meta information.
+    """
+    news = fetch_news_from_coinstats()
+    if len(news) == 0:
+        return ""
+    news_str = ""
+    for article in news:
+        news_str += f"### {article['title']} (source: {article['source']})\n{article['description']}\n\n"
+    return f"## CoinStats News:\n{news_str}"
+
+def get_google_news(
+    query: Annotated[str, "Query to search with"],
+    curr_date: Annotated[str, "Curr date in yyyy-mm-dd format"],
+    look_back_days: Annotated[int, "how many days to look back"],
+) -> str:
+    query = query.replace(" ", "+")
+
+    start_date = datetime.strptime(curr_date, "%Y-%m-%d")
+    before = start_date - relativedelta(days=look_back_days)
+    before = before.strftime("%Y-%m-%d")
+
+    news_results = getNewsData(query, before, curr_date)
+
+    news_str = ""
+
+    for news in news_results:
+        news_str += (
+            f"### {news['title']} (source: {news['source']}) \n\n{news['snippet']}\n\n"
+        )
+
+    if len(news_results) == 0:
+        return ""
+
+    return f"## {query} Google News, from {before} to {curr_date}:\n\n{news_str}"
+
+def get_reddit_posts(
+    symbol: Annotated[str, "ticker symbol of the asset"],
+    subreddit_name: Annotated[str, "name of the subreddit to fetch posts from, e.g., 'CryptoCurrency', 'CryptoMarkets', 'all'"],
+    sort: Annotated[str, "sorting method for posts ('hot', 'new', 'top', etc.)", "default is 'hot'"] = "hot",
+    limit: Annotated[int, "maximum number of posts to fetch, default is 25"] = 25,
+) -> str:
+    """
+    Fetch top posts from a specified subreddit.
+
+    Args:
+        symbol (str): The ticker symbol of the asset to filter posts.
+        subreddit_name (str): The name of the subreddit to fetch posts from.
+        sort (str): The sorting method for posts ('hot', 'new', 'top', etc.).
+        limit (int): The maximum number of posts to fetch.
+
+    Returns:
+        str: A formatted string containing the top posts from the subreddit.
+    """
+    posts = fetch_posts_from_reddit(symbol, subreddit_name, sort, limit)
+    if len(posts) == 0:
+        return ""
+
+    posts_str = ""
+    for post in posts:
+        posts_str += f"### {post['title']} (score: {post['score']}, created at: {datetime.utcfromtimestamp(post['created_utc']).strftime('%Y-%m-%d %H:%M:%S')})\n{post['content']}\n\n"
+
+    return f"## Reddit Posts in r/{subreddit_name} for {symbol}:\n{posts_str}"
+
+def get_binance_ohlcv(
+    symbol: Annotated[str, "ticker symbol of the asset"],
+    interval: Annotated[str, "time interval for the data, e.g., '1m', '5m', '1h'"],
+) -> str:
+    """
+    Fetch the latest OHLCV (Open, High, Low, Close, Volume) data from Binance for a given symbol and interval.
+
+    Args:
+        symbol (str): The trading pair symbol (e.g., 'BTCUSDT').
+        interval (str): The time interval for the OHLCV data (e.g., '1m', '5m', '1h').
+    Returns:
+        str: A formatted string containing the latest OHLCV data.
+    """
+    symbol = symbol.upper().strip()
+    if not symbol.endswith("USDT"):
+        symbol += "USDT"
+
+    ohlcv = fetch_ohlcv_from_binance(symbol, interval)
+    if ohlcv is dict:
+        return (
+            f"## {symbol} Futures **Latest OHLCV Data** in last {interval}:\n"
+            f"Open: {ohlcv['open']}, High: {ohlcv['high']}, Low: {ohlcv['low']}, Close: {ohlcv['close']}, Volume: {ohlcv['volume']}\n"
+        )
+
+def get_binance_data(
+    symbol: Annotated[str, "ticker symbol of the asset"],
+    interval: Annotated[str, "time interval for the data, e.g., '1m', '5m', '1h'"],
+    klines_limit: Annotated[int, "maximum number of klines to fetch, default is 75"] = 75,
+    depth_limit: Annotated[int, "maximum number of bids and asks to fetch, default is 50"] = 50,
+    longshort_limit: Annotated[int, "maximum number of long/short ratios to fetch, default is 50"] = 50,
+) -> str:
+    """
+    Fetch historical futures data from Binance for a given symbol and interval.
+
+    Args:
+        symbol (str): The trading pair symbol (e.g., 'BTCUSDT').
+        interval (str): The time interval for the klines (e.g., '1m', '5m', '1h').
+        klines_limit (int): The maximum number of klines to fetch (default is 75).
+        depth_limit (int): The maximum number of bids and asks to fetch (default is 50).
+        longshort_limit (int): The maximum number of long/short ratios to fetch (default is 50).
+        
+    Returns:
+        str: A formatted string containing the historical futures data.
+    """
+    symbol = symbol.upper().strip()
+    if not symbol.endswith("USDT"):
+        symbol += "USDT"  # Ensure the symbol ends with USDT for futures
+
+    klines_str = ""
+    klines = fetch_klines_from_binance(symbol, interval, klines_limit)
+    if klines is not None and len(klines) != 0:
+        klines = list(map(lambda x: { "t": x[0], "o": x[1], "h": x[2], "l": x[3], "c": x[4], "v": x[5] }, klines))
+        klines_str = f"## {symbol} Futures **KLines Data** for {interval} interval:\n" + "\n".join(
+            [f"Timestamp {entry["t"]}: Open: {entry["o"]}, High: {entry["h"]}, Low: {entry["l"]}, Close: {entry["c"]}, Volume: {entry["v"]}" for entry in klines]
+        ) + "\n\n"
+    
+    depth_str = ""
+    depth = fetch_depth_from_binance(symbol, depth_limit)
+    if depth is not None and isinstance(depth, dict):
+        bids = depth.get("bids", [-1, -1])
+        asks = depth.get("asks", [-1, -1])
+        depth = { "bids": { "price": bids[0], "volume": bids[1] }, "asks": { "price": asks[0], "volume": asks[1] } }
+        depth_str = f"## {symbol} Futures **Current Depth Data**:\nBids: Price: {depth["bids"]["price"]}, Volume: {depth["bids"]["volume"]}\nAsks: Price: {depth["asks"]["price"]}, Volume: {depth["asks"]["volume"]}\n\n"
+
+    ticker_24hr_str = ""
+    ticker_24hr = fetch_24hr_pricechange_from_binance(symbol)
+    if ticker_24hr is not None and isinstance(ticker_24hr, dict):
+        ticker_24hr_str = f"## {symbol} Futures **24-Hour Price Change**:\nPrice Change: {ticker_24hr.get("priceChange", "N/A")}, Price Change Percent: {ticker_24hr.get("priceChangePercent", "N/A")}, Weighted Avg Price: {ticker_24hr.get("weightedAvgPrice", "N/A")}\n\n"
+
+    top_longshort_position_ratio_str = ""
+    top_longshort_position_ratio = fetch_toplongshort_position_ratio_from_binance(symbol, interval, longshort_limit)
+    if top_longshort_position_ratio is not None and isinstance(top_longshort_position_ratio, list):
+        top_longshort_position_ratio = [
+            { "t": entry["timestamp"], "longShortRatio": entry["longShortRatio"] }
+            for entry in top_longshort_position_ratio
+        ]
+        top_longshort_position_ratio_str = f"## {symbol} Futures **Top Long/Short Position Ratio**:\n" + "\n".join(
+            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_position_ratio]
+        ) + "\n\n"
+
+    top_longshort_account_ratio_str = ""
+    top_longshort_account_ratio = fetch_toplongshort_account_ratio_from_binance(symbol, interval, longshort_limit)
+    if top_longshort_account_ratio is not None and isinstance(top_longshort_account_ratio, list):
+        top_longshort_account_ratio = [
+            { "t": entry["timestamp"], "longShortRatio": entry["longShortRatio"] }
+            for entry in top_longshort_account_ratio
+        ]
+        top_longshort_account_ratio_str = f"## {symbol} Futures **Top Long/Short Account Ratio**:\n" + "\n".join(
+            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_account_ratio]
+        ) + "\n\n"
+
+    global_longshort_account_ratio_str = ""
+    global_longshort_account_ratio = fetch_global_longshort_account_ratio_from_binance(symbol, interval, longshort_limit)
+    if global_longshort_account_ratio is not None and isinstance(global_longshort_account_ratio, list):
+        global_longshort_account_ratio = [
+            { "t": entry["timestamp"], "longShortRatio": entry["longShortRatio"] }
+            for entry in global_longshort_account_ratio
+        ]
+        global_longshort_account_ratio_str = f"## {symbol} Futures **Global Long/Short Account Ratio**:\n" + "\n".join(
+            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in global_longshort_account_ratio]
+        ) + "\n\n"
+
+    taker_longshort_ratio_str = ""
+    taker_longshort_ratio = fetch_taker_longshort_ratio_from_binance(symbol, interval, longshort_limit)
+    if taker_longshort_ratio is not None and isinstance(taker_longshort_ratio, list):
+        taker_longshort_ratio = [
+            { "t": entry["timestamp"], "buySellRatio": entry["buySellRatio"], "buyVol": entry["buyVol"], "sellVol": entry["sellVol"] }
+            for entry in taker_longshort_ratio
+        ]
+        taker_longshort_ratio_str = f"## {symbol} Futures **Taker Long/Short Ratio**:\n" + "\n".join(
+            [f"{entry["t"]}: Long/Short Ratio: {entry["buySellRatio"]}, Buy Volume: {entry["buyVol"]}, Sell Volume: {entry["sellVol"]}" for entry in taker_longshort_ratio]
+        ) + "\n\n"
+
+    return (
+        f"## {symbol} Futures Data:\n\n"
+        + klines_str
+        + depth_str
+        + ticker_24hr_str
+        + top_longshort_position_ratio_str
+        + top_longshort_account_ratio_str
+        + global_longshort_account_ratio_str
+        + taker_longshort_ratio_str
+    )
+
+def get_stock_news_openai(ticker, curr_date):
+    config = get_config()
+    client = OpenAI(
+        base_url=config["backend_url"],
+        api_key=os.getenv(config["api_key_env_name"])
+    )
+
+    response = client.responses.create(
+        model=config["quick_think_llm"],
+        input=[
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"Can you search Social Media for {ticker} from 7 days before {curr_date} to {curr_date}? Make sure you only get the data posted during that period.",
+                    }
+                ],
+            }
+        ],
+        text={"format": {"type": "text"}},
+        reasoning={},
+        tools=[
+            {
+                "type": "web_search_preview",
+                "user_location": {"type": "approximate"},
+                "search_context_size": "low",
+            }
+        ],
+        temperature=1,
+        max_output_tokens=4096,
+        top_p=1,
+        store=True,
+    )
+
+    return response.output[1].content[0].text
+
+def get_global_news_openai(curr_date):
+    config = get_config()
+    client = OpenAI(
+        base_url=config["backend_url"],
+        api_key=os.getenv(config["api_key_env_name"])
+    )
+
+    response = client.responses.create(
+        model=config["quick_think_llm"],
+        input=[
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"Can you search global or macroeconomics news from 7 days before {curr_date} to {curr_date} that would be informative for trading purposes? Make sure you only get the data posted during that period.",
+                    }
+                ],
+            }
+        ],
+        text={"format": {"type": "text"}},
+        reasoning={},
+        tools=[
+            {
+                "type": "web_search_preview",
+                "user_location": {"type": "approximate"},
+                "search_context_size": "low",
+            }
+        ],
+        temperature=1,
+        max_output_tokens=4096,
+        top_p=1,
+        store=True,
+    )
+
+    return response.output[1].content[0].text
+
+def get_fundamentals_openai(ticker, curr_date):
+    config = get_config()
+    client = OpenAI(
+        base_url=config["backend_url"],
+        api_key=os.getenv(config["api_key_env_name"])
+    )
+
+    response = client.responses.create(
+        model=config["quick_think_llm"],
+        input=[
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"Can you search Fundamental for discussions on {ticker} during of the month before {curr_date} to the month of {curr_date}. Make sure you only get the data posted during that period. List as a table, with PE/PS/Cash flow/ etc",
+                    }
+                ],
+            }
+        ],
+        text={"format": {"type": "text"}},
+        reasoning={},
+        tools=[
+            {
+                "type": "web_search_preview",
+                "user_location": {"type": "approximate"},
+                "search_context_size": "low",
+            }
+        ],
+        temperature=1,
+        max_output_tokens=4096,
+        top_p=1,
+        store=True,
+    )
+
+    return response.output[1].content[0].text
+
+#region Deprecated Stock Utilities
+@deprecated("Utilities only for stocks are deprecated.")
 def get_finnhub_news(
     ticker: Annotated[
         str,
-        "Search query of a company's, e.g. 'AAPL, TSM, etc.",
+        "Search query of a asset's, e.g. 'AAPL, TSM, etc.",
     ],
     curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     look_back_days: Annotated[int, "how many days to look back"],
 ):
     """
-    Retrieve news about a company within a time frame
+    Retrieve news about a asset within a time frame
 
     Args
-        ticker (str): ticker for the company you are interested in
+        ticker (str): ticker for the asset you are interested in
         start_date (str): Start date in yyyy-mm-dd format
         end_date (str): End date in yyyy-mm-dd format
     Returns
-        str: dataframe containing the news of the company in the time frame
+        str: dataframe containing the news of the asset in the time frame
 
     """
 
@@ -57,9 +473,9 @@ def get_finnhub_news(
 
     return f"## {ticker} News, from {before} to {curr_date}:\n" + str(combined_result)
 
-
-def get_finnhub_company_insider_sentiment(
-    ticker: Annotated[str, "ticker symbol for the company"],
+@deprecated("Utilities only for stocks are deprecated.")
+def get_finnhub_asset_insider_sentiment(
+    ticker: Annotated[str, "ticker symbol for the asset"],
     curr_date: Annotated[
         str,
         "current date of you are trading at, yyyy-mm-dd",
@@ -67,9 +483,9 @@ def get_finnhub_company_insider_sentiment(
     look_back_days: Annotated[int, "number of days to look back"],
 ):
     """
-    Retrieve insider sentiment about a company (retrieved from public SEC information) for the past 15 days
+    Retrieve insider sentiment about a asset (retrieved from public SEC information) for the past 15 days
     Args:
-        ticker (str): ticker symbol of the company
+        ticker (str): ticker symbol of the asset
         curr_date (str): current date you are trading on, yyyy-mm-dd
     Returns:
         str: a report of the sentiment in the past 15 days starting at curr_date
@@ -98,8 +514,8 @@ def get_finnhub_company_insider_sentiment(
         + "The change field refers to the net buying/selling from all insiders' transactions. The mspr field refers to monthly share purchase ratio."
     )
 
-
-def get_finnhub_company_insider_transactions(
+@deprecated("Utilities only for stocks are deprecated.")
+def get_finnhub_asset_insider_transactions(
     ticker: Annotated[str, "ticker symbol"],
     curr_date: Annotated[
         str,
@@ -108,12 +524,12 @@ def get_finnhub_company_insider_transactions(
     look_back_days: Annotated[int, "how many days to look back"],
 ):
     """
-    Retrieve insider transcaction information about a company (retrieved from public SEC information) for the past 15 days
+    Retrieve insider transcaction information about a asset (retrieved from public SEC information) for the past 15 days
     Args:
-        ticker (str): ticker symbol of the company
+        ticker (str): ticker symbol of the asset
         curr_date (str): current date you are trading at, yyyy-mm-dd
     Returns:
-        str: a report of the company's insider transaction/trading informtaion in the past 15 days
+        str: a report of the asset's insider transaction/trading informtaion in the past 15 days
     """
 
     date_obj = datetime.strptime(curr_date, "%Y-%m-%d")
@@ -137,15 +553,15 @@ def get_finnhub_company_insider_transactions(
     return (
         f"## {ticker} insider transactions from {before} to {curr_date}:\n"
         + result_str
-        + "The change field reflects the variation in share count—here a negative number indicates a reduction in holdings—while share specifies the total number of shares involved. The transactionPrice denotes the per-share price at which the trade was executed, and transactionDate marks when the transaction occurred. The name field identifies the insider making the trade, and transactionCode (e.g., S for sale) clarifies the nature of the transaction. FilingDate records when the transaction was officially reported, and the unique id links to the specific SEC filing, as indicated by the source. Additionally, the symbol ties the transaction to a particular company, isDerivative flags whether the trade involves derivative securities, and currency notes the currency context of the transaction."
+        + "The change field reflects the variation in share count—here a negative number indicates a reduction in holdings—while share specifies the total number of shares involved. The transactionPrice denotes the per-share price at which the trade was executed, and transactionDate marks when the transaction occurred. The name field identifies the insider making the trade, and transactionCode (e.g., S for sale) clarifies the nature of the transaction. FilingDate records when the transaction was officially reported, and the unique id links to the specific SEC filing, as indicated by the source. Additionally, the symbol ties the transaction to a particular asset, isDerivative flags whether the trade involves derivative securities, and currency notes the currency context of the transaction."
     )
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_simfin_balance_sheet(
     ticker: Annotated[str, "ticker symbol"],
     freq: Annotated[
         str,
-        "reporting frequency of the company's financial history: annual / quarterly",
+        "reporting frequency of the asset's financial history: annual / quarterly",
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
@@ -187,12 +603,12 @@ def get_simfin_balance_sheet(
         + "\n\nThis includes metadata like reporting dates and currency, share details, and a breakdown of assets, liabilities, and equity. Assets are grouped as current (liquid items like cash and receivables) and noncurrent (long-term investments and property). Liabilities are split between short-term obligations and long-term debts, while equity reflects shareholder funds such as paid-in capital and retained earnings. Together, these components ensure that total assets equal the sum of liabilities and equity."
     )
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_simfin_cashflow(
     ticker: Annotated[str, "ticker symbol"],
     freq: Annotated[
         str,
-        "reporting frequency of the company's financial history: annual / quarterly",
+        "reporting frequency of the asset's financial history: annual / quarterly",
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
@@ -231,15 +647,15 @@ def get_simfin_cashflow(
     return (
         f"## {freq} cash flow statement for {ticker} released on {str(latest_cash_flow['Publish Date'])[0:10]}: \n"
         + str(latest_cash_flow)
-        + "\n\nThis includes metadata like reporting dates and currency, share details, and a breakdown of cash movements. Operating activities show cash generated from core business operations, including net income adjustments for non-cash items and working capital changes. Investing activities cover asset acquisitions/disposals and investments. Financing activities include debt transactions, equity issuances/repurchases, and dividend payments. The net change in cash represents the overall increase or decrease in the company's cash position during the reporting period."
+        + "\n\nThis includes metadata like reporting dates and currency, share details, and a breakdown of cash movements. Operating activities show cash generated from core business operations, including net income adjustments for non-cash items and working capital changes. Investing activities cover asset acquisitions/disposals and investments. Financing activities include debt transactions, equity issuances/repurchases, and dividend payments. The net change in cash represents the overall increase or decrease in the asset's cash position during the reporting period."
     )
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_simfin_income_statements(
     ticker: Annotated[str, "ticker symbol"],
     freq: Annotated[
         str,
-        "reporting frequency of the company's financial history: annual / quarterly",
+        "reporting frequency of the asset's financial history: annual / quarterly",
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
@@ -278,149 +694,12 @@ def get_simfin_income_statements(
     return (
         f"## {freq} income statement for {ticker} released on {str(latest_income['Publish Date'])[0:10]}: \n"
         + str(latest_income)
-        + "\n\nThis includes metadata like reporting dates and currency, share details, and a comprehensive breakdown of the company's financial performance. Starting with Revenue, it shows Cost of Revenue and resulting Gross Profit. Operating Expenses are detailed, including SG&A, R&D, and Depreciation. The statement then shows Operating Income, followed by non-operating items and Interest Expense, leading to Pretax Income. After accounting for Income Tax and any Extraordinary items, it concludes with Net Income, representing the company's bottom-line profit or loss for the period."
+        + "\n\nThis includes metadata like reporting dates and currency, share details, and a comprehensive breakdown of the asset's financial performance. Starting with Revenue, it shows Cost of Revenue and resulting Gross Profit. Operating Expenses are detailed, including SG&A, R&D, and Depreciation. The statement then shows Operating Income, followed by non-operating items and Interest Expense, leading to Pretax Income. After accounting for Income Tax and any Extraordinary items, it concludes with Net Income, representing the asset's bottom-line profit or loss for the period."
     )
 
-
-def get_google_news(
-    query: Annotated[str, "Query to search with"],
-    curr_date: Annotated[str, "Curr date in yyyy-mm-dd format"],
-    look_back_days: Annotated[int, "how many days to look back"],
-) -> str:
-    query = query.replace(" ", "+")
-
-    start_date = datetime.strptime(curr_date, "%Y-%m-%d")
-    before = start_date - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
-
-    news_results = getNewsData(query, before, curr_date)
-
-    news_str = ""
-
-    for news in news_results:
-        news_str += (
-            f"### {news['title']} (source: {news['source']}) \n\n{news['snippet']}\n\n"
-        )
-
-    if len(news_results) == 0:
-        return ""
-
-    return f"## {query} Google News, from {before} to {curr_date}:\n\n{news_str}"
-
-
-def get_reddit_global_news(
-    start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-    look_back_days: Annotated[int, "how many days to look back"],
-    max_limit_per_day: Annotated[int, "Maximum number of news per day"],
-) -> str:
-    """
-    Retrieve the latest top reddit news
-    Args:
-        start_date: Start date in yyyy-mm-dd format
-        end_date: End date in yyyy-mm-dd format
-    Returns:
-        str: A formatted dataframe containing the latest news articles posts on reddit and meta information in these columns: "created_utc", "id", "title", "selftext", "score", "num_comments", "url"
-    """
-
-    start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    before = start_date - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
-
-    posts = []
-    # iterate from start_date to end_date
-    curr_date = datetime.strptime(before, "%Y-%m-%d")
-
-    total_iterations = (start_date - curr_date).days + 1
-    pbar = tqdm(desc=f"Getting Global News on {start_date}", total=total_iterations)
-
-    while curr_date <= start_date:
-        curr_date_str = curr_date.strftime("%Y-%m-%d")
-        fetch_result = fetch_top_from_category(
-            "global_news",
-            curr_date_str,
-            max_limit_per_day,
-            data_path=os.path.join(DATA_DIR, "reddit_data"),
-        )
-        posts.extend(fetch_result)
-        curr_date += relativedelta(days=1)
-        pbar.update(1)
-
-    pbar.close()
-
-    if len(posts) == 0:
-        return ""
-
-    news_str = ""
-    for post in posts:
-        if post["content"] == "":
-            news_str += f"### {post['title']}\n\n"
-        else:
-            news_str += f"### {post['title']}\n\n{post['content']}\n\n"
-
-    return f"## Global News Reddit, from {before} to {curr_date}:\n{news_str}"
-
-
-def get_reddit_company_news(
-    ticker: Annotated[str, "ticker symbol of the company"],
-    start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
-    look_back_days: Annotated[int, "how many days to look back"],
-    max_limit_per_day: Annotated[int, "Maximum number of news per day"],
-) -> str:
-    """
-    Retrieve the latest top reddit news
-    Args:
-        ticker: ticker symbol of the company
-        start_date: Start date in yyyy-mm-dd format
-        end_date: End date in yyyy-mm-dd format
-    Returns:
-        str: A formatted dataframe containing the latest news articles posts on reddit and meta information in these columns: "created_utc", "id", "title", "selftext", "score", "num_comments", "url"
-    """
-
-    start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    before = start_date - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
-
-    posts = []
-    # iterate from start_date to end_date
-    curr_date = datetime.strptime(before, "%Y-%m-%d")
-
-    total_iterations = (start_date - curr_date).days + 1
-    pbar = tqdm(
-        desc=f"Getting Company News for {ticker} on {start_date}",
-        total=total_iterations,
-    )
-
-    while curr_date <= start_date:
-        curr_date_str = curr_date.strftime("%Y-%m-%d")
-        fetch_result = fetch_top_from_category(
-            "company_news",
-            curr_date_str,
-            max_limit_per_day,
-            ticker,
-            data_path=os.path.join(DATA_DIR, "reddit_data"),
-        )
-        posts.extend(fetch_result)
-        curr_date += relativedelta(days=1)
-
-        pbar.update(1)
-
-    pbar.close()
-
-    if len(posts) == 0:
-        return ""
-
-    news_str = ""
-    for post in posts:
-        if post["content"] == "":
-            news_str += f"### {post['title']}\n\n"
-        else:
-            news_str += f"### {post['title']}\n\n{post['content']}\n\n"
-
-    return f"##{ticker} News Reddit, from {before} to {curr_date}:\n\n{news_str}"
-
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_stock_stats_indicators_window(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the asset"],
     indicator: Annotated[str, "technical indicator to get the analysis and report of"],
     curr_date: Annotated[
         str, "The current trading date you are trading on, YYYY-mm-dd"
@@ -554,9 +833,9 @@ def get_stock_stats_indicators_window(
 
     return result_str
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_stockstats_indicator(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the asset"],
     indicator: Annotated[str, "technical indicator to get the analysis and report of"],
     curr_date: Annotated[
         str, "The current trading date you are trading on, YYYY-mm-dd"
@@ -583,9 +862,9 @@ def get_stockstats_indicator(
 
     return str(indicator_value)
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_YFin_data_window(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the asset"],
     curr_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     look_back_days: Annotated[int, "how many days to look back"],
 ) -> str:
@@ -624,9 +903,9 @@ def get_YFin_data_window(
         + df_string
     )
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_YFin_data_online(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the asset"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "Start date in yyyy-mm-dd format"],
 ):
@@ -666,9 +945,9 @@ def get_YFin_data_online(
 
     return header + csv_string
 
-
+@deprecated("Utilities only for stocks are deprecated.")
 def get_YFin_data(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the asset"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "Start date in yyyy-mm-dd format"],
 ) -> str:
@@ -700,117 +979,4 @@ def get_YFin_data(
     filtered_data = filtered_data.reset_index(drop=True)
 
     return filtered_data
-
-
-def get_stock_news_openai(ticker, curr_date):
-    config = get_config()
-    client = OpenAI(
-        base_url=config["backend_url"],
-        api_key=os.getenv(config["api_key_env_name"])
-    )
-
-    response = client.responses.create(
-        model=config["quick_think_llm"],
-        input=[
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": f"Can you search Social Media for {ticker} from 7 days before {curr_date} to {curr_date}? Make sure you only get the data posted during that period.",
-                    }
-                ],
-            }
-        ],
-        text={"format": {"type": "text"}},
-        reasoning={},
-        tools=[
-            {
-                "type": "web_search_preview",
-                "user_location": {"type": "approximate"},
-                "search_context_size": "low",
-            }
-        ],
-        temperature=1,
-        max_output_tokens=4096,
-        top_p=1,
-        store=True,
-    )
-
-    return response.output[1].content[0].text
-
-
-def get_global_news_openai(curr_date):
-    config = get_config()
-    client = OpenAI(
-        base_url=config["backend_url"],
-        api_key=os.getenv(config["api_key_env_name"])
-    )
-
-    response = client.responses.create(
-        model=config["quick_think_llm"],
-        input=[
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": f"Can you search global or macroeconomics news from 7 days before {curr_date} to {curr_date} that would be informative for trading purposes? Make sure you only get the data posted during that period.",
-                    }
-                ],
-            }
-        ],
-        text={"format": {"type": "text"}},
-        reasoning={},
-        tools=[
-            {
-                "type": "web_search_preview",
-                "user_location": {"type": "approximate"},
-                "search_context_size": "low",
-            }
-        ],
-        temperature=1,
-        max_output_tokens=4096,
-        top_p=1,
-        store=True,
-    )
-
-    return response.output[1].content[0].text
-
-
-def get_fundamentals_openai(ticker, curr_date):
-    config = get_config()
-    client = OpenAI(
-        base_url=config["backend_url"],
-        api_key=os.getenv(config["api_key_env_name"])
-    )
-
-    response = client.responses.create(
-        model=config["quick_think_llm"],
-        input=[
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": f"Can you search Fundamental for discussions on {ticker} during of the month before {curr_date} to the month of {curr_date}. Make sure you only get the data posted during that period. List as a table, with PE/PS/Cash flow/ etc",
-                    }
-                ],
-            }
-        ],
-        text={"format": {"type": "text"}},
-        reasoning={},
-        tools=[
-            {
-                "type": "web_search_preview",
-                "user_location": {"type": "approximate"},
-                "search_context_size": "low",
-            }
-        ],
-        temperature=1,
-        max_output_tokens=4096,
-        top_p=1,
-        store=True,
-    )
-
-    return response.output[1].content[0].text
+#endregion

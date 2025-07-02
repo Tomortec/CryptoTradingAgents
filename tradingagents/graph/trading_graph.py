@@ -59,14 +59,14 @@ class TradingAgentsGraph:
 
         # Initialize LLMs
         if self.config["llm_provider"].lower() == "openai" or self.config["llm_provider"] == "ollama" or self.config["llm_provider"] == "openrouter":
-            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
+            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], max_completion_tokens=self.config["max_tokens"])
+            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], max_completion_tokens=self.config["max_tokens"])
         elif self.config["llm_provider"].lower() == "qwen":
-            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("DASHSCOPE_API_KEY"))
-            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("DASHSCOPE_API_KEY"))
+            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("DASHSCOPE_API_KEY"), max_completion_tokens=self.config["max_tokens"])
+            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("DASHSCOPE_API_KEY"), max_completion_tokens=self.config["max_tokens"])
         elif self.config["llm_provider"].lower() == "anthropic":
-            self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
+            self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], max_tokens_to_sample=self.config["max_tokens"])
+            self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], max_tokens_to_sample=self.config["max_tokens"])
         elif self.config["llm_provider"].lower() == "google":
             self.deep_thinking_llm = ChatGoogleGenerativeAI(model=self.config["deep_think_llm"])
             self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
@@ -117,54 +117,46 @@ class TradingAgentsGraph:
         return {
             "market": ToolNode(
                 [
-                    # online tools
-                    self.toolkit.get_YFin_data_online,
-                    self.toolkit.get_stockstats_indicators_report_online,
-                    # offline tools
-                    self.toolkit.get_YFin_data,
-                    self.toolkit.get_stockstats_indicators_report,
+                    self.toolkit.get_taapi_bulk_indicators,
+                    self.toolkit.get_binance_data
                 ]
             ),
             "social": ToolNode(
                 [
-                    # online tools
-                    self.toolkit.get_stock_news_openai,
-                    # offline tools
-                    self.toolkit.get_reddit_stock_info,
+                    self.toolkit.get_binance_ohlcv,
+                    self.toolkit.get_fear_and_greed_index,
+                    self.toolkit.get_coinstats_btc_dominance,
+                    self.toolkit.get_reddit_posts,
+                    # self.toolkit.get_stock_news_openai,
                 ]
             ),
             "news": ToolNode(
                 [
-                    # online tools
-                    self.toolkit.get_global_news_openai,
-                    self.toolkit.get_google_news,
-                    # offline tools
-                    self.toolkit.get_finnhub_news,
-                    self.toolkit.get_reddit_news,
+                    self.toolkit.get_binance_ohlcv,
+                    self.toolkit.get_coinstats_news,
+                    # self.toolkit.get_global_news_openai,
+                    # self.toolkit.get_google_news,
+                    self.toolkit.get_blockbeats_news,
+                    self.toolkit.get_coindesk_news,
                 ]
             ),
             "fundamentals": ToolNode(
                 [
-                    # online tools
-                    self.toolkit.get_fundamentals_openai,
-                    # offline tools
-                    self.toolkit.get_finnhub_company_insider_sentiment,
-                    self.toolkit.get_finnhub_company_insider_transactions,
-                    self.toolkit.get_simfin_balance_sheet,
-                    self.toolkit.get_simfin_cashflow,
-                    self.toolkit.get_simfin_income_stmt,
+                    self.toolkit.get_binance_ohlcv,
+                    self.toolkit.get_coinstats_btc_dominance,
+                    self.toolkit.get_fundamentals_openai
                 ]
             ),
         }
 
-    def propagate(self, company_name, trade_date):
-        """Run the trading agents graph for a company on a specific date."""
+    def propagate(self, asset_name, trade_date):
+        """Run the trading agents graph for a asset on a specific date."""
 
-        self.ticker = company_name
+        self.ticker = asset_name
 
         # Initialize state
         init_agent_state = self.propagator.create_initial_state(
-            company_name, trade_date
+            asset_name, trade_date
         )
         args = self.propagator.get_graph_args()
 
@@ -195,7 +187,7 @@ class TradingAgentsGraph:
     def _log_state(self, trade_date, final_state):
         """Log the final state to a JSON file."""
         self.log_states_dict[str(trade_date)] = {
-            "company_of_interest": final_state["company_of_interest"],
+            "asset_of_interest": final_state["asset_of_interest"],
             "trade_date": final_state["trade_date"],
             "market_report": final_state["market_report"],
             "sentiment_report": final_state["sentiment_report"],

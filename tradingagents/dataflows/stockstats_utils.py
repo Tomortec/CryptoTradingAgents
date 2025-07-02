@@ -5,13 +5,14 @@ from typing import Annotated
 import os
 from .config import get_config
 
-
+from warnings import deprecated
+@deprecated("Utilities only for stocks are deprecated.")
 class StockstatsUtils:
     @staticmethod
     def get_stock_stats(
-        symbol: Annotated[str, "ticker symbol for the company"],
+        symbol: Annotated[str, "ticker symbol for the asset"],
         indicator: Annotated[
-            str, "quantitative indicators based off of the stock data for the company"
+            str, "quantitative indicators based off of the stock data for the asset"
         ],
         curr_date: Annotated[
             str, "curr date for retrieving stock price data, YYYY-mm-dd"
