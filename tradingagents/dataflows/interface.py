@@ -10,6 +10,7 @@ from .taapi_utils import *
 from dateutil.relativedelta import relativedelta
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from .utils import ts_to_time
 import json
 import os
 import pandas as pd
@@ -248,7 +249,7 @@ def get_binance_data(
     if klines is not None and len(klines) != 0:
         klines = list(map(lambda x: { "t": x[0], "o": x[1], "h": x[2], "l": x[3], "c": x[4], "v": x[5] }, klines))
         klines_str = f"## {symbol} Futures **KLines Data** for {interval} interval:\n" + "\n".join(
-            [f"Timestamp {entry["t"]}: Open: {entry["o"]}, High: {entry["h"]}, Low: {entry["l"]}, Close: {entry["c"]}, Volume: {entry["v"]}" for entry in klines]
+            [f"{ts_to_time(int(entry["t"]) / 1000)}: Open: {entry["o"]}, High: {entry["h"]}, Low: {entry["l"]}, Close: {entry["c"]}, Volume: {entry["v"]}" for entry in klines]
         ) + "\n\n"
     
     depth_str = ""
@@ -272,7 +273,7 @@ def get_binance_data(
             for entry in top_longshort_position_ratio
         ]
         top_longshort_position_ratio_str = f"## {symbol} Futures **Top Long/Short Position Ratio**:\n" + "\n".join(
-            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_position_ratio]
+            [f"{ts_to_time(int(entry["t"]) / 1000)}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_position_ratio]
         ) + "\n\n"
 
     top_longshort_account_ratio_str = ""
@@ -283,7 +284,7 @@ def get_binance_data(
             for entry in top_longshort_account_ratio
         ]
         top_longshort_account_ratio_str = f"## {symbol} Futures **Top Long/Short Account Ratio**:\n" + "\n".join(
-            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_account_ratio]
+            [f"{ts_to_time(int(entry["t"]) / 1000)}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in top_longshort_account_ratio]
         ) + "\n\n"
 
     global_longshort_account_ratio_str = ""
@@ -294,7 +295,7 @@ def get_binance_data(
             for entry in global_longshort_account_ratio
         ]
         global_longshort_account_ratio_str = f"## {symbol} Futures **Global Long/Short Account Ratio**:\n" + "\n".join(
-            [f"{entry["t"]}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in global_longshort_account_ratio]
+            [f"{ts_to_time(int(entry["t"]) / 1000)}: Long/Short Ratio: {entry["longShortRatio"]}" for entry in global_longshort_account_ratio]
         ) + "\n\n"
 
     taker_longshort_ratio_str = ""
@@ -305,7 +306,7 @@ def get_binance_data(
             for entry in taker_longshort_ratio
         ]
         taker_longshort_ratio_str = f"## {symbol} Futures **Taker Long/Short Ratio**:\n" + "\n".join(
-            [f"{entry["t"]}: Long/Short Ratio: {entry["buySellRatio"]}, Buy Volume: {entry["buyVol"]}, Sell Volume: {entry["sellVol"]}" for entry in taker_longshort_ratio]
+            [f"{ts_to_time(int(entry["t"]) / 1000)}: Long/Short Ratio: {entry["buySellRatio"]}, Buy Volume: {entry["buyVol"]}, Sell Volume: {entry["sellVol"]}" for entry in taker_longshort_ratio]
         ) + "\n\n"
 
     return (

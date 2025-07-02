@@ -8,7 +8,7 @@ PROMPTS = {
             " If you or any other assistant has the FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL** or deliverable,"
             " prefix your response with FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL** so the team knows to stop."
             " You have access to the following tools: {tool_names}.\n{system_message}"
-            "For your reference, the current date is {current_date}. The asset we want to look at is {ticker}",
+            "For your reference, the current time is {current_time}. The asset we want to look at is {ticker}. The date we want to research is {date_to_research}.",
         ),
 
         #region Fundamentals Analyst
