@@ -11,10 +11,13 @@ def fetch_btc_dominance_from_coinstats():
     """
     url_24h = "https://openapiv1.coinstats.app/insights/btc-dominance?type=24h"
     url_1w = "https://openapiv1.coinstats.app/insights/btc-dominance?type=1w"
-    
+    api_key = os.getenv("COINSTATS_API_KEY")
+    if not api_key:
+        return None
+
     headers = {
         "accept": "application/json",
-        "X-API-KEY": os.getenv("COINSTATS_API_KEY")
+        "X-API-KEY": api_key
     }
 
     response_24h = requests.get(url_24h, headers=headers)
@@ -38,9 +41,12 @@ def fetch_news_from_coinstats():
         list: A list of dictionaries containing news articles with keys: "title", "source", "description"
     """
     url = "https://openapiv1.coinstats.app/news/type/latest?page=1&limit=20"
+    api_key = os.getenv("COINSTATS_API_KEY")
+    if not api_key:
+        return None
     headers = {
         "accept": "application/json",
-        "X-API-KEY": os.getenv("COINSTATS_API_KEY")
+        "X-API-KEY": api_key
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:

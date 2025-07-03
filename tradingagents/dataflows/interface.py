@@ -24,6 +24,9 @@ from .stockstats_utils import *
 from .finnhub_utils import get_data_in_range
 import yfinance as yf
 
+from tradingagents.i18n import get_prompts
+data_unavailable_prompt = get_prompts("data_unavailable")
+
 def get_blockbeats_news(count: Annotated[int, "news' count, no more than 30"] = 10):
     """
     Retrieve the latest top Blockbeats news
@@ -38,7 +41,7 @@ def get_blockbeats_news(count: Annotated[int, "news' count, no more than 30"] = 
     news = fetch_news_from_blockbeats(count)
 
     if len(news) == 0:
-        return ""
+        return "Blockbeats News: " + data_unavailable_prompt
 
     news_str = ""
     for entry in news:
@@ -62,8 +65,8 @@ def get_coindesk_news(
     """
     news = fetch_news_from_coindesk(tickers, count)
 
-    if len(news) == 0:
-        return ""
+    if not news or not isinstance(news, list) or len(news) == 0:
+        return "Coindesk News: " + data_unavailable_prompt
 
     news_str = ""
     for entry in news:
@@ -73,6 +76,8 @@ def get_coindesk_news(
 
 def get_fear_and_greed_index() -> str:
     fng = fetch_fear_and_greed_from_alternativeme()
+    if not fng or len(fng) == 0:
+        return "Fear and Greed Index: " + data_unavailable_prompt 
     return f"""## Fear and Greed Index: {fng[0]}\n0 means \"Extreme Fear\", while 100 means \"Extreme Greed\"\nPrevious daily FnG: {','.join(fng[1:])}"""
 
 def get_coinstats_btc_dominance() -> str:
@@ -83,6 +88,8 @@ def get_coinstats_btc_dominance() -> str:
         str: A formatted string containing Bitcoin dominance for 24 hours and 1 week.
     """
     btc_dominance = fetch_btc_dominance_from_coinstats()
+    if not btc_dominance or not isinstance(btc_dominance, dict):
+        return "Bitcoin Dominance: " + data_unavailable_prompt
     return f"## Bitcoin Dominance:\n24h: {btc_dominance['24h']}%, 1week: {btc_dominance['1w']}%"
 
 def get_taapi_single_indicator(
@@ -105,6 +112,8 @@ def get_taapi_single_indicator(
         str: A formatted string containing the latest technical analysis indicators.
     """
     ta_data = fetch_ta_from_taapi(symbol, indicator, interval)
+    if not ta_data:
+        return f"{symbol} Technical Analysis ({indicator}) at {interval}: " + data_unavailable_prompt
     return f"## {symbol} Technical Analysis ({indicator}) at {interval}: {ta_data}\n"
 
 def get_taapi_bulk_indicators(
@@ -125,6 +134,8 @@ def get_taapi_bulk_indicators(
     bulk = TAAPIBulkUtils(symbol, bulk_interval=interval, **kwargs)
     trend_momentum = bulk.fetch_trend_momentum_indicators_from_taapi()
     volatility_structure = bulk.fetch_volatility_structure_indicators_from_taapi()
+    if not trend_momentum or not volatility_structure:
+        return f"{symbol} Technical Analysis at {interval}: " + data_unavailable_prompt
     return f"## {symbol} Trend and Momentum Indicators at {interval}:\n{trend_momentum}\n\n" + \
             f"## {symbol} Volatility and Pattern Indicators at {interval}:\n{volatility_structure}\n"
 
@@ -136,8 +147,8 @@ def get_coinstats_news() -> str:
         str: A formatted string containing the latest news articles and meta information.
     """
     news = fetch_news_from_coinstats()
-    if len(news) == 0:
-        return ""
+    if not news or not isinstance(news, list) or len(news) == 0:
+        return "CoinStats News: " + data_unavailable_prompt
     news_str = ""
     for article in news:
         news_str += f"### {article['title']} (source: {article['source']})\n{article['description']}\n\n"
@@ -164,7 +175,7 @@ def get_google_news(
         )
 
     if len(news_results) == 0:
-        return ""
+        return "Google News: " + data_unavailable_prompt
 
     return f"## {query} Google News, from {before} to {curr_date}:\n\n{news_str}"
 
@@ -187,8 +198,8 @@ def get_reddit_posts(
         str: A formatted string containing the top posts from the subreddit.
     """
     posts = fetch_posts_from_reddit(symbol, subreddit_name, sort, limit)
-    if len(posts) == 0:
-        return ""
+    if not posts or not isinstance(posts, list) or len(posts) == 0:
+        return "Reddit Posts: " + data_unavailable_prompt
 
     posts_str = ""
     for post in posts:
@@ -219,6 +230,8 @@ def get_binance_ohlcv(
             f"## {symbol} Futures **Latest OHLCV Data** in last {interval}:\n"
             f"Open: {ohlcv['open']}, High: {ohlcv['high']}, Low: {ohlcv['low']}, Close: {ohlcv['close']}, Volume: {ohlcv['volume']}\n"
         )
+    else:
+        return f"{symbol} Futures **Latest OHLCV Data** in last {interval}: " + data_unavailable_prompt
 
 def get_binance_data(
     symbol: Annotated[str, "ticker symbol of the asset"],

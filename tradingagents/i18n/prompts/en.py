@@ -275,5 +275,6 @@ Adhere strictly to these instructions, and ensure your output is detailed, accur
     },
     "investment_preferences": {
         "system_message": "The user's investment preferences are: \n{investment_preferences}.\nPlease tailor your analysis and recommendations accordingly."
-    }
+    },
+    "data_unavailable": "Data is unavailable. Please inform the user that data is not accessible and suggest checking network connectivity, API configuration, or trying again later. Please skip this part of the analysis and do not make any guesses based on incomplete data."
 }
