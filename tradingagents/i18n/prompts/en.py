@@ -276,5 +276,10 @@ Adhere strictly to these instructions, and ensure your output is detailed, accur
     "investment_preferences": {
         "system_message": "The user's investment preferences are: \n{investment_preferences}.\nPlease tailor your analysis and recommendations accordingly."
     },
-    "data_unavailable": "Data is unavailable. Please inform the user that data is not accessible and suggest checking network connectivity, API configuration, or trying again later. Please skip this part of the analysis and do not make any guesses based on incomplete data."
+    "data_unavailable": "Data is unavailable. Please inform the user that data is not accessible and suggest checking network connectivity, API configuration, or trying again later. Please skip this part of the analysis and do not make any guesses based on incomplete data.",
+    "tools": {
+        "get_asset_news_llm": "List important news related to {ticker} from 7 days before {curr_date} to {curr_date}.",
+        "get_global_news_llm": "List global news that may impact the macroeconomy from 7 days before {curr_date} to {curr_date}.",
+        "get_fundamentals_llm": "Please provide the fundamentals of {ticker} from 7 days before {curr_date} to {curr_date}.",
+    }
 }

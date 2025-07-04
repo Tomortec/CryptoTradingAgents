@@ -16,6 +16,8 @@ DEFAULT_CONFIG = {
     "llm_provider": "qwen",
     "deep_think_llm": "qwen-plus",
     "quick_think_llm": "qwen-turbo",
+    # For ChatGPT, see https://platform.openai.com/docs/guides/tools-web-search?api-mode=chat
+    "search_llm": "qwen-plus-2025-04-28",
     "backend_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "api_key_env_name": "DASHSCOPE_API_KEY",
     "max_tokens": 4096,  # Maximum tokens for LLM responses

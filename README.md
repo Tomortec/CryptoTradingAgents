@@ -9,6 +9,17 @@
 
 [中文文档](./README-CN.md)
 
+## 🙏 Acknowledgements
+This project is based on [TradingAgents](https://github.com/TauricResearch/TradingAgents) by the [Tauric Research](https://github.com/TauricResearch) team, as well as the paper [arxiv.org/pdf/2412.20138](https://arxiv.org/pdf/2412.20138).
+We extend our sincere thanks for their contributions!
+
+In addition, the following authors and repositories also inspired this project:
+| Author | Repository |
+| --- | --- |
+| [@delenzhang](https://github.com/delenzhang) | [TradingAgents](https://github.com/delenzhang/TradingAgents) |
+| [@hsliuping](https://github.com/hsliuping)   | [TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN) |
+
+
 ## 🛠️ Usage Guide
 ### Installation
 Clone the repository:
@@ -85,7 +96,7 @@ Edit files under [`./tradingagents/i18n/prompts`](./tradingagents/i18n/prompts)
 Refer to [`./tradingagents/dataflows/README.md`](./tradingagents/dataflows/README.md)  
   
 ## 🔄 Planned Updates
-* [ ] Add LLM search capabilities for richer information retrieval
+* [x] Add LLM search capabilities for richer information retrieval
 * [ ] Provide more LLMs, such as DeepSeek (use Qwen's Embedding)
 * [ ] Enable automatic report delivery
 * [ ] Improve prompt templates using latest LLM research
