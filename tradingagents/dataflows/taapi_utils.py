@@ -15,6 +15,8 @@ def fetch_ta_from_taapi(symbol: str, indicator: str, interval: str = "15m", **pa
     :return: Technical analysis data for the specified indicator. (Raw JSON text)
     """
     api_key = os.getenv("TAAPI_API_KEY")
+    if not api_key:
+        return ""
     params = {
         "secret": api_key,
         "exchange": "binance",
@@ -70,6 +72,9 @@ class TAAPIBulkUtils(metaclass=Singleton):
         if self.bulk_data is not None and self.last_fetch_time is not None and \
             datetime.now() - self.last_fetch_time < timedelta(seconds=15):
             return self.bulk_data
+        
+        if not self.api_key:
+            return None
 
         url = "https://api.taapi.io/bulk"
         body = {
@@ -101,6 +106,8 @@ class TAAPIBulkUtils(metaclass=Singleton):
         :return: A dictionary containing the latest values for each trend and momentum indicator.
         """
         self.__fetch_bulk_ta_from_taapi()
+        if self.bulk_data is None or not isinstance(self.bulk_data, dict):
+            return None
         return {indicator: self.bulk_data.get(indicator, {}) for indicator in self.trend_momentum_indicators}
     
     def fetch_volatility_structure_indicators_from_taapi(self):
@@ -109,4 +116,6 @@ class TAAPIBulkUtils(metaclass=Singleton):
         :return: A dictionary containing the latest values for each volatility and structure indicator.
         """
         self.__fetch_bulk_ta_from_taapi()
+        if self.bulk_data is None or not isinstance(self.bulk_data, dict):
+            return None
         return {indicator: self.bulk_data.get(indicator, {}) for indicator in self.volatility_structure_indicators}

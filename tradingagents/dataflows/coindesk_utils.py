@@ -15,7 +15,7 @@ def fetch_news_from_coindesk(tickers=[], count=10) -> list[dict[str, str]]:
     """
     api_key = os.getenv('COINDESK_API_KEY')
     if not api_key:
-        raise ValueError("COINDESK_API_KEY environment variable is not set.")
+        return None
 
     url = f"https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit={count}&categories={','.join(tickers)}&api_key={api_key}"
     response = requests.get(url)

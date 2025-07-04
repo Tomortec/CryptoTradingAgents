@@ -18,9 +18,17 @@ def save_output(data: pd.DataFrame, tag: str, save_path: SavePathType = None) ->
         data.to_csv(save_path)
         print(f"{tag} saved to {save_path}")
 
-
-def get_current_date():
-    return date.today().strftime("%Y-%m-%d")
+def ts_to_time(timestamp: int) -> str:
+    """
+    Convert a Unix timestamp to a human-readable UTC time string.
+    Args:
+        timestamp (int): Unix timestamp in seconds.
+    Returns:
+        str: Formatted UTC time string in "YYYY-MM-DD HH:MM:SS" format.
+    """
+    if not isinstance(timestamp, int):
+        timestamp = int(timestamp)
+    return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def decorate_all_methods(decorator):

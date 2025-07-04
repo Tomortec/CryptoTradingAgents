@@ -5,7 +5,7 @@ PROMPTS = {
 若你或其他助理得出了最终的投资建议（买入/持有/卖出）或完成了交付内容，请在回复前加上前缀：最终投资建议：BUY/HOLD/SELL，以提示团队停止操作。虽然一下包含部分英文提示词，但在输出时**务必使用中文**。
 你可以使用以下工具：{tool_names}。
 {system_message}
-当前日期：{current_date}；目标资产：{ticker}。""",
+当前时间：{current_time}；目标资产：{ticker}；目标研究日期：{date_to_research}；目标输出语言：中文。""",
 
         #region Fundamentals Analyst
         "fundamentals_analyst": {
@@ -244,5 +244,6 @@ Here is the current conversation history: {history} Here is the last response fr
     },
     "investment_preferences": {
         "system_message": "用户的投资偏好为：\n{investment_preferences}\n请根据这些偏好来调整你的分析和建议。"
-    }
+    },
+    "data_unavailable": "数据不可用，请明确告诉用户数据不可用，并建议他们检查网络连接、API 配置或稍后再试。请略过此部分的分析，不要数据进行猜测。"
 }

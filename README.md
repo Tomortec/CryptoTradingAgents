@@ -86,6 +86,7 @@ Refer to [`./tradingagents/dataflows/README.md`](./tradingagents/dataflows/READM
   
 ## 🔄 Planned Updates
 * [ ] Add LLM search capabilities for richer information retrieval
+* [ ] Provide more LLMs, such as DeepSeek (use Qwen's Embedding)
 * [ ] Enable automatic report delivery
 * [ ] Improve prompt templates using latest LLM research
 * [ ] Integrate additional price prediction tools
