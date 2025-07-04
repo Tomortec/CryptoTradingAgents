@@ -7,11 +7,13 @@ from .interface import (
     get_blockbeats_news,
     get_coindesk_news,
     get_coinstats_news,
+    get_asset_news_llm,
+    get_global_news_llm,
     get_google_news,
     get_fear_and_greed_index,
     get_reddit_posts,
     # Financial statements functions
-    # TODO
+    get_fundamentals_llm,
     # Technical analysis functions
     get_taapi_bulk_indicators,
     # Market data functions
@@ -25,11 +27,13 @@ __all__ = [
     "get_blockbeats_news",
     "get_coindesk_news",
     "get_coinstats_news",
+    "get_asset_news_llm",
+    "get_global_news_llm",
     "get_google_news",
     "get_fear_and_greed_index",
     "get_reddit_posts",
     # Financial statements functions
-    # TODO
+    "get_fundamentals_llm",
     # Technical analysis functions
     "get_taapi_bulk_indicators",
     # Market data functions

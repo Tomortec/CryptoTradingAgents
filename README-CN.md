@@ -87,7 +87,7 @@ python -m cli.main
 请阅读[`./tradingagents/dataflows/README.md`](./tradingagents/dataflows/README.md)
 
 ## 后续可能的更新
-- [ ] 开启大模型搜索功能以获取更丰富的信息
+- [x] 开启大模型搜索功能以获取更丰富的信息
 - [ ] 提供更多大模型，例如 DeepSeek（使用千问的Embedding模型）
 - [ ] 自动发送报告
 - [ ] 结合最新 LLM 文献优化提示词

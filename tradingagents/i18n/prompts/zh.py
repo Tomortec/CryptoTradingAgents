@@ -245,5 +245,10 @@ Here is the current conversation history: {history} Here is the last response fr
     "investment_preferences": {
         "system_message": "用户的投资偏好为：\n{investment_preferences}\n请根据这些偏好来调整你的分析和建议。"
     },
-    "data_unavailable": "数据不可用，请明确告诉用户数据不可用，并建议他们检查网络连接、API 配置或稍后再试。请略过此部分的分析，不要数据进行猜测。"
+    "data_unavailable": "数据不可用，请明确告诉用户数据不可用，并建议他们检查网络连接、API 配置或稍后再试。请略过此部分的分析，不要数据进行猜测。",
+    "tools": {
+        "get_asset_news_llm": "请列出从{curr_date} 7 天前到{curr_date}的与{ticker}相关的重要新闻",
+        "get_global_news_llm": "请列出从{curr_date} 7 天前到{curr_date}的可能对宏观经济产生影响的全球新闻",
+        "get_fundamentals_llm": "请列出从{curr_date} 7 天前到{curr_date}的与{ticker}相关的基本面信息",
+    }
 }
