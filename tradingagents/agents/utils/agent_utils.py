@@ -202,7 +202,7 @@ class Toolkit:
         Returns:
             str: A formatted string containing the bulk technical indicators from TAAPI.io for the specified symbol and interval.
         """
-        taapi_bulk_indicators_result = interface.get_taapi_bulk_indicators("BTC", "15m")
+        taapi_bulk_indicators_result = interface.get_taapi_bulk_indicators(**locals())
         return taapi_bulk_indicators_result
 
     @staticmethod
