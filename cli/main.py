@@ -534,6 +534,11 @@ def get_investment_preferences():
         get_lang("step6_prompt"), default=True
     )
     if need_preferences:
+        def drop_sharp_starting_lines(text: str):
+            """Remove sharp starting lines from the text."""
+            lines = text.splitlines()
+            return "\n".join(line for line in lines if not line.strip().startswith("#"))
+
         # check if `investment_preferences` file exists
         try:
             with open("./cli/investment_preferences", "r") as f:
@@ -543,10 +548,10 @@ def get_investment_preferences():
                         get_lang("step6_pref_found_prompt"), default=True
                     )
                     if use_saved:
-                        return preferences
+                        return drop_sharp_starting_lines(preferences)
                     else:
                         preferences = typer.edit(require_save=False)
-                        return preferences if preferences else ""
+                        return drop_sharp_starting_lines(preferences) if preferences else ""
         except FileNotFoundError:
             console.print("[yellow]No file named 'investment_preferences' found.[/yellow]")
             preferences = typer.edit(require_save=False)
