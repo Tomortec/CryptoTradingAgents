@@ -1,5 +1,6 @@
 import questionary
 from typing import List, Optional, Tuple, Dict
+from markdown_pdf import MarkdownPdf, Section
 
 from cli.models import AnalystType
 from tradingagents.i18n import get_lang
@@ -28,7 +29,6 @@ def get_ticker() -> str:
     ).ask()
 
     if not ticker:
-        console.print("\n[red]No ticker symbol provided. Exiting...[/red]")
         exit(1)
 
     return ticker.strip().upper()
@@ -60,7 +60,6 @@ def get_analysis_date() -> str:
     ).ask()
 
     if not date:
-        console.print("\n[red]No date provided. Exiting...[/red]")
         exit(1)
 
     return date.strip()
@@ -86,7 +85,6 @@ def select_analysts() -> List[AnalystType]:
     ).ask()
 
     if not choices:
-        console.print("\n[red]No analysts selected. Exiting...[/red]")
         exit(1)
 
     return choices
@@ -118,7 +116,6 @@ def select_research_depth() -> int:
     ).ask()
 
     if choice is None:
-        console.print("\n[red]No research depth selected. Exiting...[/red]")
         exit(1)
 
     return choice
@@ -179,9 +176,6 @@ def select_shallow_thinking_agent(provider) -> str:
     ).ask()
 
     if choice is None:
-        console.print(
-            "\n[red]No shallow thinking llm engine selected. Exiting...[/red]"
-        )
         exit(1)
 
     return choice
@@ -247,7 +241,6 @@ def select_deep_thinking_agent(provider) -> str:
     ).ask()
 
     if choice is None:
-        console.print("\n[red]No deep thinking llm engine selected. Exiting...[/red]")
         exit(1)
 
     return choice
@@ -281,7 +274,6 @@ def select_llm_provider() -> tuple[str, str]:
     ).ask()
     
     if choice is None:
-        console.print("\n[red]no OpenAI backend selected. Exiting...[/red]")
         exit(1)
     
     display_name, url = choice
@@ -321,14 +313,15 @@ def extract_reports_from_final_state(final_state):
             analyst_reports.append(("Risk Debate - Judge Decision", risk_state["judge_decision"]))
     return {report_name: report_content for report_name, report_content in analyst_reports if report_content}
 
-def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, filename = "") -> None:
+def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_type = "pdf", filename = "") -> None:
     """
         Save the generated reports to the specified output directory.
         Args:
             ticker (str): The ticker symbol for which the reports are generated.
             reports (Dict[str, str]): A dictionary where keys are report names and values are report content.
             output_dir (str): The directory where the reports will be saved.
-            filename (str): Optional filename to save the reports as a single file. If empty, the filename will be formatted as `{ticker}_reports_{time}.md`.
+            file_type (str): The type of file to save the reports as, either "pdf" or "md". Defaults to "pdf".
+            filename (str): Optional filename to save the reports as a single file. If empty, the filename will be formatted as `{ticker}_reports_{time}`.
     """
     import os
     from datetime import datetime
@@ -336,15 +329,28 @@ def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, filename
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    file_type = "md" if file_type.lower() == "md" else "pdf"
+
     if filename:
         file_path = os.path.join(output_dir, filename)
     else:
         time_str = datetime.now().strftime("%Y%m%d_%H%M")
-        file_path = os.path.join(output_dir, f"{ticker}_reports_{time_str}.md")
+        file_path = os.path.join(output_dir, f"{ticker}_reports_{time_str}.{file_type}")
 
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.write(f"# Reports for {ticker}\n\n")
-        file.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
+    header = f"# Reports for {ticker}\n\nGenerated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+
+    if file_type == "md":
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(header)
+            for report_name, report_content in reports.items():
+                file.write(f"## {report_name}\n\n")
+                file.write(report_content + "\n\n")
+    else:
+        pdf = MarkdownPdf(toc_level=7)
+        header_html = "<div style='padding-top: 580px;' />\n\n" + header + "<div style='border-bottom: 1px solid black;margin-top: 20px;' />\n\n"
+        pdf.add_section(Section(header_html))
         for report_name, report_content in reports.items():
-            file.write(f"## {report_name}\n\n")
-            file.write(report_content + "\n\n")
+            pdf.add_section(Section(f"## {report_name}\n\n{report_content}"))
+        pdf.meta["title"] = f"Reports for {ticker}"
+        pdf.meta["author"] = "Crypto Trading Agents"
+        pdf.save(file_path)

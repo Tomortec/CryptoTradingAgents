@@ -9,6 +9,7 @@ DEFAULT_CONFIG = {
     ),
     # Output settings
     "save_report": True,
+    "report_type": "pdf", # either 'pdf' or 'md'
     "report_dir": os.path.join(
         os.path.abspath(os.path.join(os.path.dirname(__file__), ".")), "reports"
     ),
