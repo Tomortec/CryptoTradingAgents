@@ -30,7 +30,7 @@ def create_market_analyst(llm, toolkit):
                 ),
                 (
                     "system",
-                    get_prompts("user_preferences", "system_message")
+                    get_prompts("investment_preferences", "system_message")
                 ),
                 MessagesPlaceholder(variable_name="messages"),
             ]

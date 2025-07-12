@@ -18,6 +18,8 @@ def create_risky_debator(llm):
         fundamentals_report = state["fundamentals_report"]
 
         trader_decision = state["trader_investment_plan"]
+        investment_preferences = state.get("investment_preferences", "")
+
 
         prompt = get_prompts("risk_mgmt", "aggressive_debator") \
             .replace("{max_tokens}", str(DEFAULT_CONFIG["max_tokens"])) \
@@ -28,7 +30,10 @@ def create_risky_debator(llm):
             .replace("{fundamentals_report}", fundamentals_report) \
             .replace("{history}", history) \
             .replace("{current_safe_response}", current_safe_response) \
-            .replace("{current_neutral_response}", current_neutral_response)
+            .replace("{current_neutral_response}", current_neutral_response) \
+            + "\n\n" \
+            + get_prompts("investment_preferences", "system_message") \
+            .replace("{investment_preferences}", investment_preferences)
 
         response = llm.invoke(prompt)
 

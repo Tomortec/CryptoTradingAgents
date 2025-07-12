@@ -5,7 +5,7 @@ PROMPTS = {
 若你或其他助理得出了最终的投资建议（买入/持有/卖出）或完成了交付内容，请在回复前加上前缀：最终投资建议：BUY/HOLD/SELL，以提示团队停止操作。虽然一下包含部分英文提示词，但在输出时**务必使用中文**。
 你可以使用以下工具：{tool_names}。
 {system_message}
-当前时间：{current_time}；目标资产：{ticker}；目标研究日期：{date_to_research}；目标输出语言：中文。""",
+当前时间：{current_time}；目标资产：{ticker}；目标研究日期：{date_to_research}；目标输出语言：中文。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。""",
 
         #region Fundamentals Analyst
         "fundamentals_analyst": {
@@ -84,7 +84,9 @@ PROMPTS = {
 投资建议：Buy / Sell / Hold（三选一，必须明确，避免默认中立）
 推荐理由：说明为何你支持该立场，引用论据
 策略行动：基于建议提出具体的执行计划
-此外，请根据用户的投资偏好和分析师的报告，给出**建议开仓价格、支撑位、阻力位、止盈价和止损价**。
+
+请根据用户的投资偏好和分析师的报告，给出**建议开仓价格、支撑位、阻力位、止盈价和止损价**。
+此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。
 
 考虑你过去在类似情况下的错误。利用这些见解来完善你的决策，并确保你正在学习和改进。以对话的方式呈现你的分析，就像自然地说话一样，无需特殊的格式。
 
@@ -112,6 +114,7 @@ PROMPTS = {
 - 基于辩论与反思的详细理由
 - 根据用户的投资偏好和分析师的报告，给出**建议开仓价格、支撑位、阻力位、止盈价和止损价**
 - 务必不超过{max_tokens}tokens
+- 最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号
 
 必须认真考虑外部分析师报告:
 {external_reports}
@@ -140,7 +143,7 @@ Conversation history of the debate: {history}
 Last bull argument: {current_response}
 Reflections from similar situations and lessons learned: {past_memory_str}
 
-请结合以上内容分析为什么不建议投资该资产，并回应Bull Analyst的观点，展现该资产存在的风险与弱点。你还必须反思，从过去的教训和错误中吸取教训。请注意，输出务必不超过{max_tokens}tokens。""",
+请结合以上内容分析为什么不建议投资该资产，并回应Bull Analyst的观点，展现该资产存在的风险与弱点。你还必须反思，从过去的教训和错误中吸取教训。请注意，输出务必不超过{max_tokens}tokens。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。""",
         #endregion
 
         #region Bull Researcher
@@ -162,7 +165,7 @@ Conversation history of the debate: {history}
 Last bear argument: {current_response}
 Reflections from similar situations and lessons learned: {past_memory_str}
 
-请整合所有信息分析为什么建议投资该资产，并反驳Bear Analyst的观点。你还必须反思，从过去的教训和错误中吸取教训。请注意，输出务必不超过{max_tokens}tokens。""",
+请整合所有信息分析为什么建议投资该资产，并反驳Bear Analyst的观点。你还必须反思，从过去的教训和错误中吸取教训。请注意，输出务必不超过{max_tokens}tokens。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。""",
         #endregion
     },
     "risk_mgmt": {
@@ -177,7 +180,7 @@ Latest World Affairs Report: {news_report}
 Asset Fundamentals Report: {fundamentals_report}
 Here is the current conversation history: {history} Here are the last arguments from the conservative analyst: {current_safe_response} Here are the last arguments from the neutral analyst: {current_neutral_response}. If there are no responses from the other viewpoints, do not halluncinate and just present your point.
 
-如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。""",
+如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。""",
         #endregion
 
         #region Conservative Debator
@@ -191,7 +194,7 @@ Latest World Affairs Report: {news_report}
 Asset Fundamentals Report: {fundamentals_report}
 Here is the current conversation history: {history} Here is the last response from the risky analyst: {current_risky_response} Here is the last response from the neutral analyst: {current_neutral_response}. If there are no responses from the other viewpoints, do not halluncinate and just present your point.
 
-如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。""",
+如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。""",
         #endregion
 
         #region Neutral Debator
@@ -205,7 +208,7 @@ Latest World Affairs Report: {news_report}
 Asset Fundamentals Report: {fundamentals_report}
 Here is the current conversation history: {history} Here is the last response from the risky analyst: {current_risky_response} Here is the last response from the safe analyst: {current_safe_response}. If there are no responses from the other viewpoints, do not halluncinate and just present your point.
 
-如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。"""
+如果没有其他观点的发言，请不要凭空臆测，只表达你自己的立场。请以对话风格回应具体观点，无需特殊格式，输出务必不超过{max_tokens}tokens。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。"""
         #endregion
     },
     "trader": {
@@ -214,7 +217,7 @@ Here is the current conversation history: {history} Here is the last response fr
 建议方案：{investment_plan}\n
 外部专家分析：{external_reports}\n
 请基于此作出合理而有策略的判断，并根据用户的投资偏好和分析师的报告，给出**建议开仓价格、支撑位、阻力位、止盈价和止损价**。""",
-        "system_message": "你是一名交易代理，负责根据市场数据做出买入、卖出或持有的明确投资决策。分析结束后，请以 “最终投资建议：BUY/HOLD/SELL” 结尾，明确表达立场。请结合历史经验做出更优判断。以下为你在类似情况中总结的教训：{past_memory_str}"
+        "system_message": "你是一名交易代理，负责根据市场数据做出买入、卖出或持有的明确投资决策。分析结束后，请以 “最终投资建议：BUY/HOLD/SELL” 结尾，明确表达立场。请结合历史经验做出更优判断。此外，你的最大标题应从H3开始，避免使用H1和H2标题；也不要输出Emoji表情符号。以下为你在类似情况中总结的教训：{past_memory_str}"
         #endregion
     },
     "reflection": {
