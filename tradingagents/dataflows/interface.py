@@ -336,7 +336,7 @@ def get_binance_data(
 def get_asset_news_llm(ticker, curr_date):
     config = get_config()
     client = OpenAI(
-        base_url=config["backend_url"],
+        base_url=config.get("search_backend_url", config["backend_url"]),
         api_key=os.getenv(config["api_key_env_name"])
     )
     
@@ -359,7 +359,7 @@ def get_asset_news_llm(ticker, curr_date):
 def get_global_news_llm(curr_date):
     config = get_config()
     client = OpenAI(
-        base_url=config["backend_url"],
+        base_url=config.get("search_backend_url", config["backend_url"]),
         api_key=os.getenv(config["api_key_env_name"])
     )
 
@@ -381,7 +381,7 @@ def get_global_news_llm(curr_date):
 def get_fundamentals_llm(ticker, curr_date):
     config = get_config()
     client = OpenAI(
-        base_url=config["backend_url"],
+        base_url=config.get("search_backend_url", config["backend_url"]),
         api_key=os.getenv(config["api_key_env_name"])
     )
 
