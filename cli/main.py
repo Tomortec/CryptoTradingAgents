@@ -1110,7 +1110,7 @@ def run_analysis():
 
         if config["save_report"]:
             reports = extract_reports_from_final_state(final_state)
-            save_reports(selections["ticker"], reports, config["report_dir"], config["report_type"])
+            save_reports(selections["ticker"], reports, config["report_dir"], config["report_type"], decision=decision)
 
         update_display(layout)
 
