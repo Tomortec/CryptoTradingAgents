@@ -31,6 +31,7 @@ def run_analysis(
     investment_preferences: str = "",
     external_reports: list[str] = [] 
 ):
+    logger.add("logs/reports.log", rotation="1 day", retention="7 days", level="SUCCESS")
     graph = TradingAgentsGraph(
         [analyst.value for analyst in analysts], 
         config=DEFAULT_CONFIG
@@ -47,6 +48,7 @@ def run_analysis(
 
     # Stream the analysis
     trace = []
+    completion_status = {}
     for chunk in graph.graph.stream(init_agent_state, **args):
         if len(chunk["messages"]) > 0:
             
@@ -59,51 +61,76 @@ def run_analysis(
                     else:
                         logger.info(f"Tool call: {tool_call.name} with args: {tool_call.args}")
                         
-            if "market_report" in chunk and chunk["market_report"]:
+            if "market_report" in chunk and chunk["market_report"] and completion_status.get("market_report", False) is False:
                 logger.info(f"--- Market Analysis Completed ---")
+                logger.success(f"Market Report: {chunk["market_report"]}")
+                completion_status["market_report"] = True
                 
-            if "sentiment_report" in chunk and chunk["sentiment_report"]:
+            if "sentiment_report" in chunk and chunk["sentiment_report"] and completion_status.get("sentiment_report", False) is False:
                 logger.info(f"--- Sentiment Analysis Completed ---")
+                logger.success(f"Sentiment Report: {chunk["sentiment_report"]}")
+                completion_status["sentiment_report"] = True
                 
-            if "news_report" in chunk and chunk["news_report"]:
+            if "news_report" in chunk and chunk["news_report"] and completion_status.get("news_report", False) is False:
                 logger.info(f"--- News Analysis Completed ---")
+                logger.success(f"News Report: {chunk["news_report"]}")
+                completion_status["news_report"] = True
                 
-            if "fundamentals_report" in chunk and chunk["fundamentals_report"]:
+            if "fundamentals_report" in chunk and chunk["fundamentals_report"] and completion_status.get("fundamentals_report", False) is False:
                 logger.info(f"--- Fundamentals Analysis Completed ---")
+                logger.success(f"Fundamentals Report: {chunk["fundamentals_report"]}")
+                completion_status["fundamentals_report"] = True
                 
-            if "investment_debate_state" in chunk and chunk["investment_debate_state"]:
+            if "investment_debate_state" in chunk and chunk["investment_debate_state"] and completion_status.get("investment_debate_state", False) is False:
                 debate_state = chunk["investment_debate_state"]
-                if "bull_history" in debate_state and debate_state["bull_history"]:
+                if "bull_history" in debate_state and debate_state["bull_history"] and completion_status.get("bull_history", False) is False:
                     logger.info("--- Research Team Debate (In Progress) ---")
-                if "bear_history" in debate_state and debate_state["bear_history"]:
+                    logger.success(f"Bullish History: {debate_state["bull_history"]}")
+                    completion_status["bull_history"] = True
+                if "bear_history" in debate_state and debate_state["bear_history"] and completion_status.get("bear_history", False) is False:
                     logger.info("--- Research Team Debate (In Progress) ---")
+                    logger.success(f"Bearish History: {debate_state["bear_history"]}")
+                    completion_status["bear_history"] = True
                     
                 if "judge_decision" in debate_state and debate_state["judge_decision"]:
                     logger.info(f"--- Research Team Debate Completed ---")
+                    logger.success(f"Investment Judge Decision: {debate_state["judge_decision"]}")
+                    completion_status["investment_debate_state"] = True
                     
-            if "trader_investment_plan" in chunk and chunk["trader_investment_plan"]:
+            if "trader_investment_plan" in chunk and chunk["trader_investment_plan"] and completion_status.get("trader_investment_plan", False) is False:
                 logger.info(f"--- Trader Investment Planning Completed ---")
+                logger.success(f"Trader Investment Plan: {chunk["trader_investment_plan"]}")
+                completion_status["trader_investment_plan"] = True
                 
-            if "risk_debate_state" in chunk and chunk["risk_debate_state"]:
+            if "risk_debate_state" in chunk and chunk["risk_debate_state"] and completion_status.get("risk_debate_state", False) is False:
                 risk_state = chunk["risk_debate_state"]
-                if "current_risky_response" in risk_state and risk_state["current_risky_response"]:
+                if "current_risky_response" in risk_state and risk_state["current_risky_response"] and completion_status.get("current_risky_response", False) is False:
                     logger.info(f"--- Risk Discussion - Risky (In Progress) ---")
-                if "current_safe_response" in risk_state and risk_state["current_safe_response"]:
+                    logger.success(f"Current Risky Response: {risk_state["current_risky_response"]}")
+                    completion_status["current_risky_response"] = True
+                if "current_safe_response" in risk_state and risk_state["current_safe_response"] and completion_status.get("current_safe_response", False) is False:
                     logger.info(f"--- Risk Discussion - Safe (In Progress) ---")
-                if "current_neutral_response" in risk_state and risk_state["current_neutral_response"]:
+                    logger.success(f"Current Safe Response: {risk_state["current_safe_response"]}")
+                    completion_status["current_safe_response"] = True
+                if "current_neutral_response" in risk_state and risk_state["current_neutral_response"] and completion_status.get("current_neutral_response", False) is False:
                     logger.info(f"--- Risk Discussion - Neutral (In Progress) ---")
+                    logger.success(f"Current Neutral Response: {risk_state["current_neutral_response"]}")
+                    completion_status["current_neutral_response"] = True
                     
-                if "judge_decision" in risk_state and risk_state["judge_decision"]:
+                if "judge_decision" in risk_state and risk_state["judge_decision"] and completion_status.get("risk_judge_decision", False) is False:
                     logger.info(f"--- Risk Discussion Completed ---")
+                    logger.success(f"Risk Judge Decision: {risk_state["judge_decision"]}")
                     logger.info("Analysis completed successfully.")
+                    completion_status["risk_judge_decision"] = True
             
             trace.append(chunk)
 
     # Get final state and decision
     final_state = trace[-1]
-    decision = graph.process_signal(final_state["final_trade_decision"])
-    decision_color = "green" if decision == "buy" else "red" if decision == "sell" else "yellow"
-    logger.info(f"<{decision_color}>Final decision: {decision}</{decision_color}>", colorize=True)
+    decision = graph.process_signal(final_state["final_trade_decision"]).capitalize()
+    decision_color = "green" if decision == "Buy" else "red" if decision == "Sell" else "yellow"
+    logger.level("FINAL", no=38, color=decision_color)
+    logger.log("FINAL", f"Final Decision: {decision}")
 
     if DEFAULT_CONFIG["save_report"]:
         logger.info("Saving reports...")
