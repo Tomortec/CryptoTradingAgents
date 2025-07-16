@@ -19,6 +19,25 @@ In addition, the following authors and repositories also inspired this project:
 | [@delenzhang](https://github.com/delenzhang) | [TradingAgents](https://github.com/delenzhang/TradingAgents) |
 | [@hsliuping](https://github.com/hsliuping)   | [TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN) |
 
+## ✨ Key Features
+💰 **Crypto-Focused**  
+Built upon the TradingAgents framework, specifically adjusted for cryptocurrency assets.  
+📈 **Integrated Technical Analysis**  
+Pulls data from professional technical analysis platforms instead of relying solely on LLM interpretation, reducing unreliable qualitative fluff. [Supported Infomation Sources](#supported-information-sources)  
+📰 **Targeted News Sources**  
+Collects data from sources frequently used by crypto traders — reliable, relevant, and free! [Supported Infomation Sources](#supported-information-sources)  
+❤️ **Tailored to Your Trading Style**  
+You can define custom investment preferences—whether you're an aggressive trader or a long-term investor, your style and strategy will be reflected in the report. [Configure Investment Preferences](#4-optional-configure-investment-preferences)  
+🚀 **Incorporate External Reports**  
+You can provide external researches or opinions for consideration—more context leads to better insights. [Steps to Use](#steps-to-use)  
+📄 **PDF or Markdown Report Generation**  
+Analysis reports are generated in readable formats.  
+📧 **Scheduled Email Delivery**  
+Combine with OS-level task schedulers to automatically generate and email reports - get market updates like you're the head of a trading desk.  
+🎥 **Real-Time Report Logging**  
+Generated reports are written to log files under ./logs in real time. Even if the process is interrupted or encounters an error, the partial report remains available—ensuring your API usage is never wasted.  
+⚙️ **Fully Customizable**  
+Easily modify or add new data sources. A detailed guide is provided to help you quickly adapt the tool to your needs. [Customization](#customization)
 
 ## 🛠️ Usage Guide
 ### Installation
@@ -40,37 +59,53 @@ pip install -r requirements.txt
 ```
 
 ### Configuration
-#### Configure LLM API Key
-Create a `.env` file under the `./cli` directory and fill in your LLM API key, such as:  
+#### 1. Configure LLM API Key
+Create a `.env` file under the `./cli` directory using `.env.example` and fill in your LLM API key, such as:  
 For Qwen: `DASHSCOPE_API_KEY=XXXXXX`  
 For ChatGPT: `OPENAI_API_KEY=XXXXXX`  
 > See [Supported LLMs and API Key Naming](#supported-llms)
 
-#### Configure Information Source API Keys
+#### 2. Configure Information Source API Keys
 Also add the required API keys for data sources into the `./cli/.env` file
 > See [Supported Information Sources](#supported-information-sources)
 
-#### Check and Modify Configuration
+#### 3. Check and Modify Configuration
 Edit [`./tradingagents/default_config.py`](./tradingagents/default_config.py) to change the language, LLM settings, and other default configurations.
 
-#### (Optional) Configure Investment Preferences
+#### 4. (Optional) Configure Investment Preferences
 Create a file named `investment_preferences` in the `./cli` directory to define custom investment preferences.
 
-#### Run the Program
+#### 5. (Optional) Configure Email Sending
+Set `send_report_to_email = True` in [`default_config.py`](./tradingagents/default_config.py),  
+then copy `./mailsender/.env.example` to `.env` and fill in the email settings.
+
+### Running the Program
+
+You can use [**CLI Mode**](#cli-mode) or [**Script Mode**](#script-mode).  
+CLI mode includes an interactive terminal interface; script mode is ideal for automation (e.g., hourly scheduled reports).
+
+#### CLI Mode 
 Execute the main program from terminal:
 ```sh
 python -m cli.main
 ```
 
-### Steps to Use
+##### Steps to Use
 1. **Enter Asset Symbol**, such as BTC or ETH
-2. **Enter Analysis Date**, consistent with the source project
-3. **Select Analyst Team**, consistent with the source project
-4. **Choose Research Depth**, consistent with the source project
+2. **Enter Analysis Date**
+3. **Select Analyst Team** - `Market Analyst`, `Social Media Analyst`, `News Analyst` and `Fundamentals Analyst`
+4. **Choose Research Depth**
 5. **Import External Reports**: Type `y` and press Enter to open the default editor, where you can input external viewpoints for the model to consider. Save the file when done.
 6. **Import Investment Preferences**: Use the saved file at `./cli/investment_preferences` or input them directly in the editor (optional).
-7. **Select LLM Model**, consistent with the source project
+7. **Select LLM Model**
 8. **Generate Report**: After processing, the report will be saved under [`./tradingagents/reports`](./tradingagents/reports).
+
+#### Script Mode
+1. Edit `./cli/run.py` as needed (e.g., set ticker or date)
+2. Run the script:
+```sh
+python -m cli.run
+```
 
 ### Supported LLMs
 | Name                | API Variable        | Tested |
@@ -97,11 +132,12 @@ Refer to [`./tradingagents/dataflows/README.md`](./tradingagents/dataflows/READM
   
 ## 🔄 Planned Updates
 * [x] Add LLM search capabilities for richer information retrieval
+* [x] Enable automatic report delivery
+* [ ] Integrate with freqtrade for backtesting/simulated trading
 * [ ] Provide more LLMs, such as DeepSeek (use Qwen's Embedding)
-* [ ] Enable automatic report delivery
 * [ ] Improve prompt templates using latest LLM research
-* [ ] Integrate additional price prediction tools
 * [ ] Provide a UI interface
+* [ ] ~~Integrate other price forecasting tools~~ (You can implement your own with [Customize Data Sources](#customize-data-sources). For forecasting tools, see [CryptoMamba](https://github.com/MShahabSepehri/CryptoMamba), [Cryptopulse](https://github.com/aamitssharma07/SAL-Cryptopulse), etc.)
 
 ## ⚠️ Disclaimer
 This project is for research and educational purposes only and does **not constitute investment advice**. Investing involves risk—make decisions cautiously.
