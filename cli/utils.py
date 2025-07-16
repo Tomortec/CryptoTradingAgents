@@ -313,7 +313,7 @@ def extract_reports_from_final_state(final_state):
             analyst_reports.append(("Risk Debate - Judge Decision", risk_state["judge_decision"]))
     return {report_name: report_content for report_name, report_content in analyst_reports if report_content}
 
-def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_type = "pdf", filename = "") -> None:
+def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_type = "pdf", filename = "", decision: str = "") -> None:
     """
         Save the generated reports to the specified output directory.
         Args:
@@ -322,6 +322,7 @@ def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_typ
             output_dir (str): The directory where the reports will be saved.
             file_type (str): The type of file to save the reports as, either "pdf" or "md". Defaults to "pdf".
             filename (str): Optional filename to save the reports as a single file. If empty, the filename will be formatted as `{ticker}_reports_{time}`.
+            decision (str): "Buy", "Sell", or "Hold" decision to include in the report file name.
     """
     import os
     from datetime import datetime
@@ -335,7 +336,7 @@ def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_typ
         file_path = os.path.join(output_dir, filename)
     else:
         time_str = datetime.now().strftime("%Y%m%d_%H%M")
-        file_path = os.path.join(output_dir, f"{ticker}_reports_{time_str}.{file_type}")
+        file_path = os.path.join(output_dir, f"{ticker}_reports{("_"+decision if decision else "")}_{time_str}.{file_type}")
 
     header = f"# Reports for {ticker}\n\nGenerated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
 
@@ -345,12 +346,18 @@ def save_reports(ticker: str, reports: Dict[str, str], output_dir: str, file_typ
             for report_name, report_content in reports.items():
                 file.write(f"## {report_name}\n\n")
                 file.write(report_content + "\n\n")
+            if decision:
+                file.write(f"## Final Decision: {decision.capitalize()}\n\n")
     else:
         pdf = MarkdownPdf(toc_level=7)
-        header_html = "<div style='padding-top: 580px;' />\n\n" + header + "<div style='border-bottom: 1px solid black;margin-top: 20px;' />\n\n"
+        decision_bgcolor = "#347433" if decision.lower() == "buy" else ("#B22222" if decision.lower() == "sell" else "#F1A71C")
+        decision_html = f"<div style='background-color: {decision_bgcolor}; padding: 10px; color: white; text-align: center; font-weight: bold; margin-bottom: 20px;'>Decision: {decision.capitalize()}</div>\n\n" if decision else ""
+        header_html = f"<h1 style='font-size: 72px; margin-bottom: 420px;'>Reports for {ticker}</h1>\n\n" + \
+            decision_html + \
+            f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
         pdf.add_section(Section(header_html))
         for report_name, report_content in reports.items():
-            pdf.add_section(Section(f"## {report_name}\n\n{report_content}"))
+            pdf.add_section(Section(f"## {report_name}\n\n{report_content}", toc=False))
         pdf.meta["title"] = f"Reports for {ticker}"
         pdf.meta["author"] = "Crypto Trading Agents"
         pdf.save(file_path)

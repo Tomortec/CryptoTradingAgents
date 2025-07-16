@@ -15,7 +15,7 @@ from rich.text import Text
 from rich.live import Live
 from rich.table import Table
 from collections import deque
-import time
+from time import sleep
 from rich.tree import Tree
 from rich import box
 from rich.align import Align
@@ -26,6 +26,7 @@ from tradingagents.default_config import DEFAULT_CONFIG
 from cli.models import AnalystType
 from cli.utils import *
 from tradingagents.i18n import get_lang
+from mailsender import send as send_reports
 
 console = Console()
 lang = get_lang()
@@ -1110,7 +1111,11 @@ def run_analysis():
 
         if config["save_report"]:
             reports = extract_reports_from_final_state(final_state)
-            save_reports(selections["ticker"], reports, config["report_dir"], config["report_type"])
+            save_reports(selections["ticker"], reports, config["report_dir"], config["report_type"], decision=decision)
+
+        if config["send_report_to_email"]:
+            sleep(1)  # Allow time for any background tasks to complete
+            send_reports()
 
         update_display(layout)
 
