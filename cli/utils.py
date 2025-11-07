@@ -156,6 +156,11 @@ def select_shallow_thinking_agent(provider) -> str:
         ],
         "ollama": [
             ("llama3.2 local", "llama3.2"),
+        ],
+        "gitee": [
+            ("DeepSeek-V3 - Strong reasoning and stable large-scale MoE model", "DeepSeek-V3"),
+            ("Qwen2.5-14B-Instruct - Fast and efficient for quick tasks", "Qwen2.5-14B-Instruct"),
+            ("Qwen3-30B-A3B-Instruct-2507 - MoE model with strong reasoning and long context", "Qwen3-30B-A3B-Instruct-2507"),
         ]
     }
 
@@ -221,6 +226,11 @@ def select_deep_thinking_agent(provider) -> str:
         ],
         "ollama": [
             ("qwen3", "qwen3"),
+        ],
+        "gitee": [
+            ("DeepSeek-V3 - Strong reasoning and stable large-scale MoE model", "DeepSeek-V3"),
+            ("Qwen2.5-72B-Instruct - High-performance model for complex tasks and multi-step reasoning", "Qwen2.5-72B-Instruct"),
+            ("Qwen3-30B-A3B-Instruct-2507 - MoE model with strong reasoning and long context", "Qwen3-30B-A3B-Instruct-2507"),
         ]
     }
     
@@ -255,6 +265,7 @@ def select_llm_provider() -> tuple[str, str]:
         ("Google", "https://generativelanguage.googleapis.com/v1"),
         ("Openrouter", "https://openrouter.ai/api/v1"),
         ("Ollama", "http://localhost:11434/v1"),        
+        ("Gitee", "https://ai.gitee.com/v1"),
     ]
     
     choice = questionary.select(
