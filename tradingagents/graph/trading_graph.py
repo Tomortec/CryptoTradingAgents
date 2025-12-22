@@ -70,6 +70,18 @@ class TradingAgentsGraph:
         elif self.config["llm_provider"].lower() == "google":
             self.deep_thinking_llm = ChatGoogleGenerativeAI(model=self.config["deep_think_llm"])
             self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
+        elif self.config["llm_provider"].lower() == "gitee":
+            class GiteeChatOpenAI(ChatOpenAI):
+                def _get_request_payload(self, input_, *, stop=None, **kwargs):
+                    """Override to fix Gitee API message format - ensure content field exists for tool calls"""
+                    payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+                    if "messages" in payload:
+                        for msg in payload["messages"]:
+                            if (msg.get("role") == "assistant" and "tool_calls" in msg and ("content" not in msg or msg["content"] is None)):
+                                msg["content"] = ""
+                    return payload
+            self.deep_thinking_llm = GiteeChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("GITEE_API_KEY"), max_completion_tokens=self.config["max_tokens"])
+            self.quick_thinking_llm = GiteeChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"], api_key=os.getenv("GITEE_API_KEY"), max_completion_tokens=self.config["max_tokens"])      
         else:
             raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
         

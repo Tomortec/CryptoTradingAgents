@@ -14,6 +14,12 @@ class FinancialSituationMemory:
                 base_url=config["backend_url"],
                 api_key=os.getenv("DASHSCOPE_API_KEY")
             )
+        elif config["llm_provider"] == "gitee":
+            self.embedding = "Qwen3-Embedding-8B"
+            self.client = OpenAI(
+                base_url=config["backend_url"],
+                api_key=os.getenv("GITEE_API_KEY")
+            )
         else:
             self.embedding = "text-embedding-3-small"
             self.client = OpenAI()

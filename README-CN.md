@@ -17,7 +17,7 @@
 |[@hsliuping](https://github.com/hsliuping)|[TradingAgents-CN](https://github.com/hsliuping/TradingAgents-CN)|
 
 ## 示例报告
-[BTC-2025-07-01](./EXAMPLE_REPORT.md)
+[BTC-2025-07-01](./EXAMPLE_REPORT.pdf)
 
 ## 特色功能
 💰 **针对加密货币**：基于 TradingAgents 的分析思路和基础框架，针对加密货币进行调整  
