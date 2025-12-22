@@ -28,12 +28,12 @@ def send_email_with_body(body: str):
     smtp_server    = os.getenv("SMTP_SERVER")
     smtp_port      = int(os.getenv("SMTP_PORT", 587))
     sender_email   = os.getenv("SENDER_EMAIL")
-    receiver_email = os.getenv("RECEIVER_EMAIL")
+    receiver_email = os.getenv("RECEIVER_EMAIL").split(",")
     password       = os.getenv("EMAIL_PASSWORD")
 
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = receiver_email
+    message["To"] = ", ".join(receiver_email)
     message["Subject"] = "Warning - From Crypto Trading Agents"
     message.attach(MIMEText(body, "plain"))
     
@@ -54,12 +54,12 @@ def send_email_with_pdf(file_path: str):
     smtp_server    = os.getenv("SMTP_SERVER")
     smtp_port      = int(os.getenv("SMTP_PORT", 587))
     sender_email   = os.getenv("SENDER_EMAIL")
-    receiver_email = os.getenv("RECEIVER_EMAIL")
+    receiver_email = os.getenv("RECEIVER_EMAIL").split(",")
     password       = os.getenv("EMAIL_PASSWORD")
 
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = receiver_email
+    message["To"] = ", ".join(receiver_email)
     message["Subject"] = "Latest Trading Report - From Crypto Trading Agents"
     message.attach(MIMEText("Report attached.", "plain"))
 
@@ -91,12 +91,12 @@ def send_email_with_markdown(file_path: str):
     smtp_server    = os.getenv("SMTP_SERVER")
     smtp_port      = int(os.getenv("SMTP_PORT", 587))
     sender_email   = os.getenv("SENDER_EMAIL")
-    receiver_email = os.getenv("RECEIVER_EMAIL")
+    receiver_email = os.getenv("RECEIVER_EMAIL").split(",")
     password       = os.getenv("EMAIL_PASSWORD")
 
     message = MIMEMultipart()
     message["From"] = sender_email
-    message["To"] = receiver_email
+    message["To"] = ", ".join(receiver_email)
     message["Subject"] = "Latest Trading Report - From Crypto Trading Agents"
     message.attach(MIMEText("Report attached.", "plain"))
 
